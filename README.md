@@ -1,6 +1,6 @@
 # Cross-Border Fee Calculation API
 
-A backend service that calculates an **itemised estimate of the all-in customer price, from configured, dated rates**, for cross-border B2B marketplace transactions across Latin America. It is a proof of concept: rates are mocked and some tax rules are out of date (see [Known Limitations](#known-limitations-checked-2026-10-28)).
+A backend service that calculates an **itemised estimate of the all-in customer price, from configured rates (FX rates dated 2026-02-21)**, for cross-border B2B marketplace transactions across Latin America. It is a proof of concept: rates are mocked and some tax rules are out of date (see [Known Limitations](#known-limitations-checked-2026-10-28)).
 
 ## Quick Start
 
