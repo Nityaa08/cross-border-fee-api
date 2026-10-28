@@ -1,5 +1,7 @@
 # Fee Calculation Logic & Assumptions
 
+> Note (2026-10-28): the Argentina PAIS rule and the Brazil IOF rate below are out of date. See Known Limitations in the README.
+
 ## How the Calculation Works
 
 When a customer initiates a payment, the engine applies four fee layers **in sequence**:

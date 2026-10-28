@@ -1,6 +1,6 @@
 # Cross-Border Fee Calculation API
 
-A backend service that calculates the **true all-in customer price** for cross-border B2B marketplace transactions across Latin America.
+A backend service that calculates an **itemised estimate of the all-in customer price, from configured, dated rates**, for cross-border B2B marketplace transactions across Latin America. It is a proof of concept: rates are mocked and some tax rules are out of date (see [Known Limitations](#known-limitations-checked-2026-10-28)).
 
 ## Quick Start
 
@@ -159,7 +159,7 @@ curl -X POST http://localhost:3000/api/v1/calculate \
 ```
 
 **Response:** Final price **ARS 75,915** (44.6% total fees!)
-- PAIS tax 30% is the dominant cost
+- The 30% rule labelled PAIS is the dominant cost (the PAIS tax itself ended in December 2024; see Known Limitations)
 - FX spread 5% (volatile currency)
 - This illustrates why AR customers see massive markups
 
@@ -220,12 +220,12 @@ All percentage fees are calculated on the **mid-market equivalent** (not the spr
 |---------|----------|-----|--------------|-------|
 | MX | MXN | 16% IVA | 1.2% | Standard Mexican digital services tax |
 | CO | COP | 19% IVA | 1.5% | Colombian VAT on cross-border services |
-| BR | BRL | 6.5% IOF | 2.0% | IOF tax on foreign currency card transactions |
-| AR | ARS | 30% PAIS | 2.5% | PAIS tax on foreign currency purchases; highly volatile FX |
+| BR | BRL | 6.5% IOF | 2.0% | IOF tax on foreign currency card transactions (out of date: 3.5% since 23 May 2025) |
+| AR | ARS | 30% PAIS | 2.5% | Labelled PAIS tax (out of date: PAIS ended December 2024); highly volatile FX |
 
 ### FX Rates
 
-Mocked mid-market rates (approximate 2026 values). Spreads:
+Mocked mid-market rates, dated 2026-02-21 in `src/config/fees.ts` and not refreshed since. Spreads:
 - MXN: 2.5% (stable corridor)
 - COP: 3.0%
 - BRL: 2.5%
@@ -244,12 +244,25 @@ In production, these would come from a live FX API with a Redis-backed cache.
 | No authentication | Out of scope for POC; production would use API keys |
 | No persistence | Stateless by design; every call is self-contained |
 
+## Known Limitations (checked 2026-10-28)
+
+- **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
+- **Brazil IOF rate is out of date.** Brazil set IOF on international card payments at 3.5% from 23 May 2025 (Decree 12.466/2025). The config uses 6.5%.
+- **Flat fee currency bug.** When the price is already in the customer's local currency (no FX), the USD flat fee is added unconverted. Example: 500,000 COP, CO to CO, card returns a processing fee of 19,500.30 COP; with the flat fee converted at the configured rate it would be 20,745 COP.
+- **HTTP 500 for client errors.** Malformed JSON returns 500 instead of 400. A valid request with an unsupported currency pair (for example MXN price, CO customer) passes validation and returns 500 (`No FX rate available for MXN → COP`); it should be rejected as a client error. The error body includes the internal message.
+- **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals for every currency; production code should use integer minor units per currency.
+- **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
+- **`merchant_country` accepts any 2 characters** (for example `zz`), and there is no minimum amount.
+- **Tests check which fees appear more than their amounts**: exact amounts are not asserted for the 5 scenarios, so a rate change can pass most tests.
+
+---
+
 ## Testing
 
 ```bash
 npm test
 ```
 
-Runs 13 tests across two suites:
+Runs 13 tests across two suites (92.5% line coverage with `npx jest --coverage --forceExit`, measured 2026-10-28):
 - **Engine tests** (7): All 5 scenarios, determinism check, error handling
 - **API tests** (6): HTTP integration, validation errors, health check
