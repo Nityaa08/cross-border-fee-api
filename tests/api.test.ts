@@ -75,6 +75,31 @@ describe("API Integration Tests", () => {
     expect(res.body.details[0].field).toBe("payment_method");
   });
 
+  test("POST /api/v1/calculate — malformed JSON returns 400, not 500", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .set("Content-Type", "application/json")
+      .send('{"original_amount": 100,');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Malformed JSON");
+  });
+
+  test("POST /api/v1/calculate — unsupported currency pair returns 400, not 500", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .send({
+        original_amount: 100,
+        original_currency: "MXN",
+        customer_country: "CO",
+        merchant_country: "MX",
+        payment_method: "card",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details[0].field).toBe("original_currency");
+  });
+
   test("GET /health — returns ok", async () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);
