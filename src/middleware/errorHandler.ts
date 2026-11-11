@@ -4,10 +4,6 @@ import { Request, Response, NextFunction } from "express";
 // malformed JSON, 413 for an oversized body) and a machine-readable type.
 type HttpError = Error & { status?: number; type?: string };
 
-// Thrown by the FX engine when a currency pair has no configured rate.
-// This is a problem with the request, not the server.
-const UNSUPPORTED_PAIR_PREFIX = "No FX rate available";
-
 export function errorHandler(
   err: HttpError,
   _req: Request,
@@ -18,14 +14,6 @@ export function errorHandler(
     res.status(400).json({
       error: "Malformed JSON",
       message: "Request body must be valid JSON",
-    });
-    return;
-  }
-
-  if (err.message?.startsWith(UNSUPPORTED_PAIR_PREFIX)) {
-    res.status(400).json({
-      error: "Validation failed",
-      details: [{ field: "original_currency", message: err.message }],
     });
     return;
   }

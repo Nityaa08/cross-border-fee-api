@@ -5,6 +5,7 @@ import {
   Currency,
   PaymentMethod,
 } from "../types";
+import config from "../config/fees";
 
 const VALID_COUNTRIES: CustomerCountry[] = ["MX", "CO", "BR", "AR"];
 const VALID_CURRENCIES: Currency[] = ["USD", "MXN", "COP", "BRL", "ARS"];
@@ -85,6 +86,27 @@ export function validateFeeRequest(
       field: "payment_method",
       message: `payment_method must be one of: ${VALID_PAYMENT_METHODS.join(", ")}`,
     });
+  }
+
+  // A price can be in USD or already in the customer's local currency. Any
+  // other pair (for example an MXN price for a customer in CO) has no FX rate
+  // configured, so reject it here as a client error instead of letting the
+  // engine fail with a 500.
+  if (
+    VALID_CURRENCIES.includes(body.original_currency) &&
+    VALID_COUNTRIES.includes(body.customer_country)
+  ) {
+    const local = config.countries[body.customer_country as CustomerCountry].currency;
+    const from = body.original_currency as Currency;
+    const hasRate =
+      from === local ||
+      config.fx_rates.some((r) => r.from === from && r.to === local);
+    if (!hasRate) {
+      errors.push({
+        field: "original_currency",
+        message: `original_currency must be USD or ${local} for customer_country ${body.customer_country}`,
+      });
+    }
   }
 
   if (errors.length > 0) {

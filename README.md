@@ -57,7 +57,7 @@ Calculate all-in customer price for a transaction.
 | Field              | Type   | Required | Values                                     |
 |--------------------|--------|----------|--------------------------------------------|
 | `original_amount`  | number | yes      | > 0, max 1,000,000                         |
-| `original_currency`| string | yes      | `USD`, `MXN`, `COP`, `BRL`, `ARS`          |
+| `original_currency`| string | yes      | `USD`, or the customer's own currency (e.g. `MXN` for `MX`) |
 | `customer_country` | string | yes      | `MX`, `CO`, `BR`, `AR`                     |
 | `merchant_country` | string | yes      | Any 2-letter code (e.g., `US`, `MX`)       |
 | `payment_method`   | string | yes      | `card`, `bank_transfer`, `cash_voucher`     |
@@ -201,6 +201,8 @@ curl -X POST http://localhost:3000/api/v1/calculate \
 }
 ```
 
+A price in a currency with no rate to the customer's currency (for example an MXN price for a customer in CO) is also a 400 on `original_currency`. Malformed JSON returns 400 `{"error": "Malformed JSON", ...}`. Unexpected server errors return 500 `{"error": "Internal server error"}`; the detail is logged, not sent to the client.
+
 ---
 
 ## Fee Logic & Assumptions
@@ -248,7 +250,6 @@ In production, these would come from a live FX API with a Redis-backed cache.
 
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
 - **Brazil IOF rate is out of date.** Brazil set IOF on international card payments at 3.5% from 23 May 2025 (Decree 12.466/2025). The config uses 6.5%.
-- **HTTP 500 for client errors.** Malformed JSON returns 500 instead of 400. A valid request with an unsupported currency pair (for example MXN price, CO customer) passes validation and returns 500 (`No FX rate available for MXN → COP`); it should be rejected as a client error. The error body includes the internal message.
 - **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals for every currency; production code should use integer minor units per currency.
 - **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
 - **`merchant_country` accepts any 2 characters** (for example `zz`), and there is no minimum amount.
@@ -262,6 +263,6 @@ In production, these would come from a live FX API with a Redis-backed cache.
 npm test
 ```
 
-Runs 15 tests across two suites (86.0% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-11):
+Runs 19 tests across two suites (92.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-11):
 - **Engine tests** (9): All 5 scenarios, the USD flat fee converted for local-currency prices, determinism check, error handling
-- **API tests** (6): HTTP integration, validation errors, health check
+- **API tests** (10): HTTP integration, validation errors (including malformed JSON and unsupported currency pairs as 400), server errors as 500 without internal detail, health check
