@@ -66,3 +66,17 @@ export function convertCurrency(
     spread_cost: spreadCost,
   };
 }
+
+/**
+ * Mid-market rate for converting a USD amount into `to`, with no spread.
+ * Used for fees that are configured in USD (for example the flat
+ * processing fee) when the price itself needs no conversion.
+ */
+export function usdMidMarketRate(to: Currency): number {
+  if (to === "USD") return 1;
+  const rate = findRate("USD", to);
+  if (!rate) {
+    throw new Error(`No FX rate available for USD → ${to}`);
+  }
+  return rate.mid_market_rate;
+}

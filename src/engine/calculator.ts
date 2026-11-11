@@ -5,7 +5,7 @@ import {
   CustomerCountry,
 } from "../types";
 import config from "../config/fees";
-import { convertCurrency } from "./fx";
+import { convertCurrency, usdMidMarketRate } from "./fx";
 
 /**
  * Round to 2 decimal places using banker's rounding approach.
@@ -69,10 +69,11 @@ export function calculateFees(
   }
 
   // ── Step 2: Payment method fee ──
-  // Flat fee converted to local currency if needed
-  const flatFeeLocal = fxResult
-    ? paymentFeeConfig.flat_fee_usd * fxResult.mid_market_rate
-    : paymentFeeConfig.flat_fee_usd;
+  // The flat fee is configured in USD, so it always needs converting to the
+  // settlement currency, even when the price itself is already local (no FX).
+  // Mid-market rate, so the customer is not charged the spread on a fee.
+  const flatFeeLocal =
+    paymentFeeConfig.flat_fee_usd * usdMidMarketRate(settlementCurrency);
 
   const paymentPercentageFee = midMarketLocal * paymentFeeConfig.percentage_fee;
   const totalPaymentFee = flatFeeLocal + paymentPercentageFee;

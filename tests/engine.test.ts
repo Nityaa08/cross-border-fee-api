@@ -119,6 +119,49 @@ describe("Fee Calculation Engine", () => {
     expect(res.final_customer_price).toBeLessThan(520000); // <4% fee
   });
 
+  // ── Flat fee is converted even when the price needs no FX ──
+  test("Local-currency price: USD flat fee is converted to local currency", () => {
+    const res = calculateFees({
+      original_amount: 500000,
+      original_currency: "COP",
+      customer_country: "CO",
+      merchant_country: "CO",
+      payment_method: "card",
+    });
+
+    // 3.9% of 500,000 = 19,500, plus 0.30 USD × 4,150 = 1,245 COP
+    const fee = findFee(res, "payment_processing_fee")!;
+    expect(fee.amount).toBe(20745);
+    expect(fee.currency).toBe("COP");
+    expect(res.total_fees).toBe(20745);
+    expect(res.final_customer_price).toBe(520745);
+  });
+
+  test("Flat fee is the same in local terms with or without FX", () => {
+    // 100 USD into MXN vs the same amount already priced in MXN (1,715 MXN):
+    // the processing fee must match, because both are the same payment.
+    const viaFx = calculateFees({
+      original_amount: 100,
+      original_currency: "USD",
+      customer_country: "MX",
+      merchant_country: "MX",
+      payment_method: "cash_voucher",
+    });
+    const local = calculateFees({
+      original_amount: 1715,
+      original_currency: "MXN",
+      customer_country: "MX",
+      merchant_country: "MX",
+      payment_method: "cash_voucher",
+    });
+
+    // 4% of 1,715 = 68.60, plus 0.50 USD × 17.15 = 8.575 → 77.18 MXN
+    expect(findFee(local, "payment_processing_fee")!.amount).toBe(77.18);
+    expect(findFee(viaFx, "payment_processing_fee")!.amount).toBe(
+      findFee(local, "payment_processing_fee")!.amount
+    );
+  });
+
   // ── Determinism ──
   test("Identical inputs produce identical outputs", () => {
     const req: FeeCalculationRequest = {

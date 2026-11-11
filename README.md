@@ -248,7 +248,6 @@ In production, these would come from a live FX API with a Redis-backed cache.
 
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
 - **Brazil IOF rate is out of date.** Brazil set IOF on international card payments at 3.5% from 23 May 2025 (Decree 12.466/2025). The config uses 6.5%.
-- **Flat fee currency bug.** When the price is already in the customer's local currency (no FX), the USD flat fee is added unconverted. Example: 500,000 COP, CO to CO, card returns a processing fee of 19,500.30 COP; with the flat fee converted at the configured rate it would be 20,745 COP.
 - **HTTP 500 for client errors.** Malformed JSON returns 500 instead of 400. A valid request with an unsupported currency pair (for example MXN price, CO customer) passes validation and returns 500 (`No FX rate available for MXN → COP`); it should be rejected as a client error. The error body includes the internal message.
 - **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals for every currency; production code should use integer minor units per currency.
 - **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
@@ -263,6 +262,6 @@ In production, these would come from a live FX API with a Redis-backed cache.
 npm test
 ```
 
-Runs 13 tests across two suites (92.5% line coverage with `npx jest --coverage --forceExit`, measured 2026-10-28):
-- **Engine tests** (7): All 5 scenarios, determinism check, error handling
+Runs 15 tests across two suites (86.0% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-11):
+- **Engine tests** (9): All 5 scenarios, the USD flat fee converted for local-currency prices, determinism check, error handling
 - **API tests** (6): HTTP integration, validation errors, health check
