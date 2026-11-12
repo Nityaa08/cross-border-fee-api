@@ -56,10 +56,10 @@ Calculate all-in customer price for a transaction.
 
 | Field              | Type   | Required | Values                                     |
 |--------------------|--------|----------|--------------------------------------------|
-| `original_amount`  | number | yes      | > 0, max 1,000,000                         |
+| `original_amount`  | number | yes      | 0.01 to 1,000,000                          |
 | `original_currency`| string | yes      | `USD`, or the customer's own currency (e.g. `MXN` for `MX`) |
 | `customer_country` | string | yes      | `MX`, `CO`, `BR`, `AR`                     |
-| `merchant_country` | string | yes      | Any 2-letter code (e.g., `US`, `MX`)       |
+| `merchant_country` | string | yes      | Any ISO 3166-1 alpha-2 code (e.g., `US`, `MX`); case-insensitive |
 | `payment_method`   | string | yes      | `card`, `bank_transfer`, `cash_voucher`     |
 
 **Response:**
@@ -248,11 +248,13 @@ In production, these would come from a live FX API with a Redis-backed cache.
 
 ## Known Limitations (checked 2026-10-28)
 
+Fixed on 2026-11-12: `merchant_country` must be a real ISO 3166-1 alpha-2 code (it accepted any 2 characters, such as `zz`), and `original_amount` must be at least 0.01 (0.001 USD was accepted and charged a 0.30 USD flat fee, about 300% of the price).
+
+
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
 - **Brazil IOF rate is out of date.** Brazil set IOF on international card payments at 3.5% from 23 May 2025 (Decree 12.466/2025). The config uses 6.5%.
 - **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals for every currency; production code should use integer minor units per currency.
 - **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
-- **`merchant_country` accepts any 2 characters** (for example `zz`), and there is no minimum amount.
 - **Tests check which fees appear more than their amounts**: exact amounts are not asserted for the 5 scenarios, so a rate change can pass most tests.
 
 ---
@@ -263,6 +265,6 @@ In production, these would come from a live FX API with a Redis-backed cache.
 npm test
 ```
 
-Runs 19 tests across two suites (92.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-11):
+Runs 29 tests across two suites (93.8% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-12):
 - **Engine tests** (9): All 5 scenarios, the USD flat fee converted for local-currency prices, determinism check, error handling
-- **API tests** (10): HTTP integration, validation errors (including malformed JSON and unsupported currency pairs as 400), server errors as 500 without internal detail, health check
+- **API tests** (20): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes and amounts below 0.01 as 400), server errors as 500 without internal detail, health check

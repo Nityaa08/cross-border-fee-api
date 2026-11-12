@@ -148,6 +148,60 @@ describe("API Integration Tests", () => {
     log.mockRestore();
   });
 
+  const valid = {
+    original_amount: 100,
+    original_currency: "USD",
+    customer_country: "MX",
+    merchant_country: "US",
+    payment_method: "card",
+  };
+
+  test.each(["ZZ", "zz", "XX", "U1", "USA", 42])(
+    "POST /api/v1/calculate — merchant_country %p that is not an ISO code returns 400",
+    async (merchant_country) => {
+      const res = await request(app)
+        .post("/api/v1/calculate")
+        .send({ ...valid, merchant_country });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details).toEqual([
+        expect.objectContaining({ field: "merchant_country" }),
+      ]);
+    }
+  );
+
+  test("POST /api/v1/calculate — lower-case merchant_country is accepted as upper case", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .send({ ...valid, merchant_country: "de" });
+
+    expect(res.status).toBe(200);
+    const crossBorder = res.body.fees.find((f: { name: string }) => f.name === "cross_border_fee");
+    expect(crossBorder.description).toContain("merchant in DE");
+  });
+
+  test.each([0.001, 0.009])(
+    "POST /api/v1/calculate — amount %p below 0.01 returns 400",
+    async (original_amount) => {
+      const res = await request(app)
+        .post("/api/v1/calculate")
+        .send({ ...valid, original_amount });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details).toEqual([
+        { field: "original_amount", message: "original_amount must be at least 0.01" },
+      ]);
+    }
+  );
+
+  test("POST /api/v1/calculate — amount of exactly 0.01 is accepted", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .send({ ...valid, original_amount: 0.01 });
+
+    expect(res.status).toBe(200);
+  });
+
   test("GET /health — returns ok", async () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);

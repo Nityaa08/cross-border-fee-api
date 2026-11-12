@@ -6,6 +6,11 @@ import {
   PaymentMethod,
 } from "../types";
 import config from "../config/fees";
+import { ISO_3166_ALPHA2 } from "../config/countries";
+
+// Amounts are rounded to 2 decimals, so anything smaller is a zero price
+// that would still be charged the flat processing fee.
+const MIN_AMOUNT = 0.01;
 
 const VALID_COUNTRIES: CustomerCountry[] = ["MX", "CO", "BR", "AR"];
 const VALID_CURRENCIES: Currency[] = ["USD", "MXN", "COP", "BRL", "ARS"];
@@ -32,6 +37,11 @@ export function validateFeeRequest(
     errors.push({
       field: "original_amount",
       message: "original_amount must be a positive number",
+    });
+  } else if (body.original_amount < MIN_AMOUNT) {
+    errors.push({
+      field: "original_amount",
+      message: `original_amount must be at least ${MIN_AMOUNT}`,
     });
   } else if (body.original_amount > 1_000_000) {
     errors.push({
@@ -69,11 +79,17 @@ export function validateFeeRequest(
       field: "merchant_country",
       message: "merchant_country is required",
     });
-  } else if (typeof body.merchant_country !== "string" || body.merchant_country.length !== 2) {
+  } else if (
+    typeof body.merchant_country !== "string" ||
+    !ISO_3166_ALPHA2.has(body.merchant_country.toUpperCase())
+  ) {
     errors.push({
       field: "merchant_country",
-      message: "merchant_country must be a 2-letter country code",
+      message: "merchant_country must be an ISO 3166-1 alpha-2 country code, such as US",
     });
+  } else {
+    // Accept "us" but pass "US" on, so the fee descriptions are consistent.
+    body.merchant_country = body.merchant_country.toUpperCase();
   }
 
   if (!body.payment_method) {
