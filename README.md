@@ -281,7 +281,7 @@ In production, these would come from a live FX API with a Redis-backed cache.
 
 Fixed on 2026-11-12: `merchant_country` must be a real ISO 3166-1 alpha-2 code (it accepted any 2 characters, such as `zz`), and `original_amount` must be at least 0.01 (0.001 USD was accepted and charged a 0.30 USD flat fee, about 300% of the price).
 
-Fixed on 2026-11-13: the fee lines always add up to `total_fees`, and `settlement_amount + total_fees` is always `final_customer_price`. Totals were summed from unrounded amounts, so about a third of quotes were a cent off (0.38 USD → MX by card listed 0.16 + 5.37 + 1.04 = 6.57 MXN of fees but a total of 6.58). Half-cent amounts now round up: the 2.5% FX spread on 1,715 MXN is 42.875 and showed as 42.87.
+Fixed on 2026-11-13: the fee lines always add up to `total_fees`, and `settlement_amount + total_fees` is always `final_customer_price`. Totals were summed from unrounded amounts, so about a third of quotes were a cent off (0.38 USD → MX by card listed 0.16 + 5.37 + 1.04 = 6.57 MXN of fees but a total of 6.58). Half-cent amounts now round up: the 2.5% FX spread on 1,715 MXN is 42.875 and showed as 42.87. The 5 scenarios now assert every fee line, the totals and the final price exactly (they only checked which fees appeared), so a changed rate fails a test.
 
 
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
@@ -290,7 +290,6 @@ Fixed on 2026-11-13: the fee lines always add up to `total_fees`, and `settlemen
 - **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
 - **The rate limit is per instance.** Counts live in memory, so each serverless instance counts on its own. It stops one client from hammering one instance; a global quota would need a shared store such as Redis.
 - **No authentication.** Fine for a public demo of mocked rates; a real service would use API keys.
-- **Tests check which fees appear more than their amounts**: exact amounts are not asserted for the 5 scenarios, so a rate change can pass most tests.
 
 ---
 
@@ -301,7 +300,7 @@ npm test
 ```
 
 Runs 40 tests across three suites (94.3% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-13):
-- **Engine tests** (12): All 5 scenarios, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
+- **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
 - **API tests** (20): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes and amounts below 0.01 as 400), server errors as 500 without internal detail, health check
 - **Demo tests** (8): the HTML page for browsers and JSON for API clients at `/`, the config endpoint, rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
 

@@ -11,6 +11,11 @@ function findFee(res: FeeCalculationResponse, name: string) {
   return res.fees.find((f) => f.name === name);
 }
 
+/** Fee lines as { name: amount }, in the order the engine lists them. */
+function feeAmounts(res: FeeCalculationResponse): Record<string, number> {
+  return Object.fromEntries(res.fees.map((f) => [f.name, f.amount]));
+}
+
 describe("Fee Calculation Engine", () => {
   // ── Scenario 1: Standard USD→MXN card payment, cross-border ──
   test("Scenario 1: US merchant → MX customer, $100 USD, card", () => {
@@ -35,6 +40,19 @@ describe("Fee Calculation Engine", () => {
     expect(findFee(res, "payment_processing_fee")).toBeDefined();
     expect(findFee(res, "cross_border_fee")).toBeDefined();
     expect(findFee(res, "tax_withholding")).toBeDefined();
+
+    // Exact amounts. Mid-market base: 100 × 17.15 = 1,715 MXN.
+    expect(res.settlement_amount).toBe(1715);
+    expect(res.fx_rate).toBe(17.58); // 17.15 × 1.025 = 17.57875
+    expect(feeAmounts(res)).toEqual({
+      fx_conversion_cost: 42.88, // 2.5% of 1,715 = 42.875
+      payment_processing_fee: 65.17, // 3.5% of 1,715 = 60.025, + 0.30 × 17.15 = 5.145
+      cross_border_fee: 20.58, // 1.2% of 1,715
+      tax_withholding: 274.4, // IVA 16% of 1,715
+    });
+    expect(res.total_fees).toBe(403.03);
+    expect(res.total_fees_pct).toBe(0.235);
+    expect(res.final_customer_price).toBe(2118.03);
   });
 
   // ── Scenario 2: Domestic MX→MX transaction, no cross-border fee ──
@@ -55,6 +73,16 @@ describe("Fee Calculation Engine", () => {
     expect(findFee(res, "fx_conversion_cost")).toBeDefined();
     // Still has tax since foreign currency
     expect(findFee(res, "tax_withholding")).toBeDefined();
+
+    expect(res.settlement_amount).toBe(1715);
+    expect(feeAmounts(res)).toEqual({
+      fx_conversion_cost: 42.88, // 2.5% of 1,715 = 42.875
+      payment_processing_fee: 30.87, // 1.8% of 1,715, no flat fee
+      tax_withholding: 274.4, // IVA 16% of 1,715
+    });
+    expect(res.total_fees).toBe(348.15);
+    expect(res.total_fees_pct).toBe(0.203);
+    expect(res.final_customer_price).toBe(2063.15);
   });
 
   // ── Scenario 3: Brazilian customer, card, cross-border (IOF) ──
@@ -76,6 +104,19 @@ describe("Fee Calculation Engine", () => {
     // IOF-like tax should be ~6.5%
     const tax = findFee(res, "tax_withholding")!;
     expect(tax.rate).toBe(0.065);
+
+    // Mid-market base: 250 × 5.85 = 1,462.50 BRL.
+    expect(res.settlement_amount).toBe(1462.5);
+    expect(res.fx_rate).toBe(6); // 5.85 × 1.025 = 5.99625
+    expect(feeAmounts(res)).toEqual({
+      fx_conversion_cost: 36.56, // 2.5% of 1,462.50 = 36.5625
+      payment_processing_fee: 62.89, // 4.2% = 61.425, + 0.25 × 5.85 = 1.4625
+      cross_border_fee: 29.25, // 2.0% of 1,462.50
+      tax_withholding: 95.06, // 6.5% of 1,462.50 = 95.0625
+    });
+    expect(res.total_fees).toBe(223.76);
+    expect(res.total_fees_pct).toBe(0.153);
+    expect(res.final_customer_price).toBe(1686.26);
   });
 
   // ── Scenario 4: Argentine customer, cash_voucher, high tax ──
@@ -96,6 +137,18 @@ describe("Fee Calculation Engine", () => {
     const tax = findFee(res, "tax_withholding")!;
     expect(tax.rate).toBe(0.3);
     expect(res.total_fees_pct).toBeGreaterThan(0.35); // >35% total
+
+    // Mid-market base: 50 × 1,050 = 52,500 ARS.
+    expect(res.settlement_amount).toBe(52500);
+    expect(feeAmounts(res)).toEqual({
+      fx_conversion_cost: 2625, // 5% of 52,500
+      payment_processing_fee: 3727.5, // 5.5% = 2,887.50, + 0.80 × 1,050 = 840
+      cross_border_fee: 1312.5, // 2.5% of 52,500
+      tax_withholding: 15750, // 30% of 52,500
+    });
+    expect(res.total_fees).toBe(23415);
+    expect(res.total_fees_pct).toBe(0.446);
+    expect(res.final_customer_price).toBe(75915);
   });
 
   // ── Scenario 5: Colombian customer, domestic bank_transfer ──
@@ -123,6 +176,13 @@ describe("Fee Calculation Engine", () => {
     // Final price = base + processing fee only
     expect(res.final_customer_price).toBeGreaterThan(500000);
     expect(res.final_customer_price).toBeLessThan(520000); // <4% fee
+
+    // 2% of 500,000, no flat fee for bank transfer
+    expect(res.settlement_amount).toBe(500000);
+    expect(feeAmounts(res)).toEqual({ payment_processing_fee: 10000 });
+    expect(res.total_fees).toBe(10000);
+    expect(res.total_fees_pct).toBe(0.02);
+    expect(res.final_customer_price).toBe(510000);
   });
 
   // ── Flat fee is converted even when the price needs no FX ──
