@@ -1,19 +1,34 @@
 import express from "express";
 import calculateRouter from "./routes/calculate";
 import healthRouter from "./routes/health";
+import metaRouter from "./routes/meta";
 import { errorHandler } from "./middleware/errorHandler";
+import { rateLimit } from "./middleware/rateLimit";
+import { DEMO_PAGE } from "./ui/page";
 
 const app = express();
 
-app.use(express.json());
+app.disable("x-powered-by");
+app.use(express.json({ limit: "10kb" }));
 
-app.get("/", (_req, res) => {
+// Public demo: cap each client at RATE_LIMIT_PER_MINUTE calculations a minute
+// (per running instance, see middleware/rateLimit.ts).
+const perMinute = Number(process.env.RATE_LIMIT_PER_MINUTE) || 30;
+const calculateLimit = rateLimit({ limit: perMinute, windowMs: 60_000 });
+
+app.get("/", (req, res) => {
+  // Browsers get the demo page; API clients (curl, fetch with JSON) get the index.
+  if (req.accepts(["json", "html"]) === "html") {
+    res.type("html").send(DEMO_PAGE);
+    return;
+  }
   res.json({
     name: "Cross-Border Fee Calculation API",
     version: "1.0.0",
     endpoints: {
       health: "GET /health",
       calculate: "POST /api/v1/calculate",
+      config: "GET /api/v1/config",
     },
     example: {
       method: "POST",
@@ -29,7 +44,8 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.use("/api/v1/calculate", calculateRouter);
+app.use("/api/v1/calculate", calculateLimit, calculateRouter);
+app.use("/api/v1/config", metaRouter);
 app.use("/health", healthRouter);
 
 app.use(errorHandler);
