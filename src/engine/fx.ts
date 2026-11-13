@@ -54,9 +54,11 @@ export function convertCurrency(
   // Effective rate = mid-market rate * (1 + spread)
   // Customer gets a worse rate by the spread percentage
   const effectiveRate = rate.mid_market_rate * (1 + rate.spread_pct);
-  const convertedAmount = amount * effectiveRate;
   const midMarketConverted = amount * rate.mid_market_rate;
-  const spreadCost = convertedAmount - midMarketConverted;
+  // Spread cost as mid-market amount × spread, not (converted − mid-market):
+  // the subtraction loses precision (42.87499999999954 instead of 42.875).
+  const spreadCost = midMarketConverted * rate.spread_pct;
+  const convertedAmount = midMarketConverted + spreadCost;
 
   return {
     converted_amount: convertedAmount,

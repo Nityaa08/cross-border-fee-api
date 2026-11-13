@@ -8,10 +8,14 @@ import config from "../config/fees";
 import { convertCurrency, usdMidMarketRate } from "./fx";
 
 /**
- * Round to 2 decimal places using banker's rounding approach.
+ * Round to 2 decimal places, halves up.
+ *
+ * `toPrecision(15)` first drops binary noise, so an amount that is exactly
+ * half a cent in decimal (1,715 × 2.5% = 42.875) rounds up to 42.88 instead
+ * of down because the double is stored as 42.87499999…
  */
-function round2(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
+export function round2(n: number): number {
+  return Math.round(Number((n * 100).toPrecision(15))) / 100;
 }
 
 /**
@@ -119,26 +123,25 @@ export function calculateFees(
   }
 
   // ── Step 5: Totals ──
-  const totalFees =
-    (fxResult ? fxResult.spread_cost : 0) +
-    totalPaymentFee +
-    crossBorderFee +
-    taxAmount;
-
-  const finalPrice = midMarketLocal + totalFees;
-  const totalFeesPct = midMarketLocal > 0 ? totalFees / midMarketLocal : 0;
+  // Totals are built from the rounded amounts the customer sees, so the
+  // fee lines always add up to total_fees, and settlement_amount plus
+  // total_fees is always final_customer_price.
+  const settlementAmount = round2(midMarketLocal);
+  const totalFees = round2(fees.reduce((sum, fee) => sum + fee.amount, 0));
+  const finalPrice = round2(settlementAmount + totalFees);
+  const totalFeesPct = settlementAmount > 0 ? totalFees / settlementAmount : 0;
 
   return {
     original_amount: req.original_amount,
     original_currency: req.original_currency,
     settlement_currency: settlementCurrency,
-    settlement_amount: round2(midMarketLocal),
+    settlement_amount: settlementAmount,
     fx_rate: fxResult ? round2(fxResult.effective_rate) : null,
     fx_spread_pct: fxResult ? fxResult.spread_pct : null,
     fees,
-    total_fees: round2(totalFees),
-    total_fees_pct: round2(totalFeesPct * 10000) / 10000, // 4 decimal places
-    final_customer_price: round2(finalPrice),
+    total_fees: totalFees,
+    total_fees_pct: Math.round(totalFeesPct * 10000) / 10000, // 4 decimal places
+    final_customer_price: finalPrice,
     final_currency: settlementCurrency,
   };
 }

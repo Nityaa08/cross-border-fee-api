@@ -1,5 +1,11 @@
-import { calculateFees } from "../src/engine/calculator";
-import { FeeCalculationRequest, FeeCalculationResponse } from "../src/types";
+import { calculateFees, round2 } from "../src/engine/calculator";
+import {
+  Currency,
+  CustomerCountry,
+  FeeCalculationRequest,
+  FeeCalculationResponse,
+  PaymentMethod,
+} from "../src/types";
 
 function findFee(res: FeeCalculationResponse, name: string) {
   return res.fees.find((f) => f.name === name);
@@ -159,6 +165,77 @@ describe("Fee Calculation Engine", () => {
     expect(findFee(local, "payment_processing_fee")!.amount).toBe(77.18);
     expect(findFee(viaFx, "payment_processing_fee")!.amount).toBe(
       findFee(local, "payment_processing_fee")!.amount
+    );
+  });
+
+  // ── The breakdown adds up ──
+  test("Fee lines add up to total_fees, and base + fees = final price", () => {
+    // Before the fix, totals were summed from unrounded amounts, so about a
+    // third of quotes were a cent off: 0.38 USD → MX by card showed lines of
+    // 0.16 + 5.37 + 1.04 = 6.57 MXN but total_fees of 6.58.
+    const local: Record<CustomerCountry, Currency> = {
+      MX: "MXN",
+      CO: "COP",
+      BR: "BRL",
+      AR: "ARS",
+    };
+    const methods: PaymentMethod[] = ["card", "bank_transfer", "cash_voucher"];
+    let checked = 0;
+
+    for (const country of Object.keys(local) as CustomerCountry[]) {
+      for (const method of methods) {
+        for (const merchant of [country, "US"]) {
+          for (const currency of ["USD", local[country]] as Currency[]) {
+            for (let cents = 1; cents < 30000; cents += 137) {
+              const res = calculateFees({
+                original_amount: cents / 100,
+                original_currency: currency,
+                customer_country: country,
+                merchant_country: merchant,
+                payment_method: method,
+              });
+              const lines = round2(res.fees.reduce((s, f) => s + f.amount, 0));
+              expect(lines).toBe(res.total_fees);
+              expect(round2(res.settlement_amount + res.total_fees)).toBe(
+                res.final_customer_price
+              );
+              checked++;
+            }
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(10000);
+  });
+
+  test("Half a cent rounds up, despite binary floating point", () => {
+    // 2.5% of 1,715 MXN is exactly 42.875. Computed as converted − mid-market
+    // it came out as 42.87499999999954 and was shown as 42.87.
+    const res = calculateFees({
+      original_amount: 100,
+      original_currency: "USD",
+      customer_country: "MX",
+      merchant_country: "MX",
+      payment_method: "bank_transfer",
+    });
+    expect(findFee(res, "fx_conversion_cost")!.amount).toBe(42.88);
+
+    expect(round2(42.875)).toBe(42.88);
+    expect(round2(1.005)).toBe(1.01); // stored as 1.00499999999999989…
+    expect(round2(0.125)).toBe(0.13);
+    expect(round2(20745)).toBe(20745);
+  });
+
+  test("total_fees_pct has at most 4 decimal places", () => {
+    const res = calculateFees({
+      original_amount: 0.38,
+      original_currency: "USD",
+      customer_country: "MX",
+      merchant_country: "MX",
+      payment_method: "card",
+    });
+    expect(Math.round(res.total_fees_pct * 10000) / 10000).toBe(
+      res.total_fees_pct
     );
   });
 

@@ -21,7 +21,7 @@ The public deployment is rate limited (30 calculations a minute per client IP, p
 ```bash
 npm install
 npm run dev        # http://localhost:3000 (demo page) with auto-reload
-npm test           # 37 Jest tests
+npm test           # 40 Jest tests
 
 # or build and run
 npm run build && npm start
@@ -133,8 +133,8 @@ curl -X POST http://localhost:3000/api/v1/calculate \
   }'
 ```
 
-**Response:** Final price **MXN 2,118.02** (23.5% total fees on $100 USD)
-- FX spread (2.5%): MXN 42.87
+**Response:** Final price **MXN 2,118.03** (23.5% total fees on $100 USD)
+- FX spread (2.5%): MXN 42.88
 - Card processing (3.5% + $0.30): MXN 65.17
 - Cross-border (1.2%): MXN 20.58
 - IVA tax (16%): MXN 274.40
@@ -153,7 +153,7 @@ curl -X POST http://localhost:3000/api/v1/calculate \
   }'
 ```
 
-**Response:** Final price **MXN 2,063.14** (20.3% total fees)
+**Response:** Final price **MXN 2,063.15** (20.3% total fees)
 - No cross-border fee (domestic)
 - Still has FX spread and tax (foreign currency transaction)
 
@@ -281,10 +281,12 @@ In production, these would come from a live FX API with a Redis-backed cache.
 
 Fixed on 2026-11-12: `merchant_country` must be a real ISO 3166-1 alpha-2 code (it accepted any 2 characters, such as `zz`), and `original_amount` must be at least 0.01 (0.001 USD was accepted and charged a 0.30 USD flat fee, about 300% of the price).
 
+Fixed on 2026-11-13: the fee lines always add up to `total_fees`, and `settlement_amount + total_fees` is always `final_customer_price`. Totals were summed from unrounded amounts, so about a third of quotes were a cent off (0.38 USD → MX by card listed 0.16 + 5.37 + 1.04 = 6.57 MXN of fees but a total of 6.58). Half-cent amounts now round up: the 2.5% FX spread on 1,715 MXN is 42.875 and showed as 42.87.
+
 
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended in December 2024 (reported by EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax withholding regime continued on some foreign-currency transactions, per the same report. The rule's name and scope need verifying before use.
 - **Brazil IOF rate is out of date.** Brazil set IOF on international card payments at 3.5% from 23 May 2025 (Decree 12.466/2025). The config uses 6.5%.
-- **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals for every currency; production code should use integer minor units per currency.
+- **Floating-point money.** Amounts are JavaScript numbers rounded to 2 decimals (half up) for every currency; production code should use integer minor units per currency, and ARS and COP are usually shown without cents.
 - **Only USD → local FX rates exist**, and they are mocked constants dated 2026-02-21.
 - **The rate limit is per instance.** Counts live in memory, so each serverless instance counts on its own. It stops one client from hammering one instance; a global quota would need a shared store such as Redis.
 - **No authentication.** Fine for a public demo of mocked rates; a real service would use API keys.
@@ -298,8 +300,8 @@ Fixed on 2026-11-12: `merchant_country` must be a real ISO 3166-1 alpha-2 code (
 npm test
 ```
 
-Runs 37 tests across three suites (94.3% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-13):
-- **Engine tests** (9): All 5 scenarios, the USD flat fee converted for local-currency prices, determinism check, error handling
+Runs 40 tests across three suites (94.3% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-13):
+- **Engine tests** (12): All 5 scenarios, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
 - **API tests** (20): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes and amounts below 0.01 as 400), server errors as 500 without internal detail, health check
 - **Demo tests** (8): the HTML page for browsers and JSON for API clients at `/`, the config endpoint, rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
 
