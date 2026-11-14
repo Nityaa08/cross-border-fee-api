@@ -2,6 +2,7 @@ import express from "express";
 import calculateRouter from "./routes/calculate";
 import healthRouter from "./routes/health";
 import metaRouter from "./routes/meta";
+import selfcheckRouter from "./routes/selfcheck";
 import { errorHandler } from "./middleware/errorHandler";
 import { rateLimit } from "./middleware/rateLimit";
 import { DEMO_PAGE } from "./ui/page";
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
       health: "GET /health",
       calculate: "POST /api/v1/calculate",
       config: "GET /api/v1/config",
+      selfcheck: "GET /api/v1/selfcheck",
     },
     example: {
       method: "POST",
@@ -52,6 +54,7 @@ app.get("/demo", (_req, res) => {
 
 app.use("/api/v1/calculate", calculateLimit, calculateRouter);
 app.use("/api/v1/config", metaRouter);
+app.use("/api/v1/selfcheck", selfcheckRouter);
 app.use("/health", healthRouter);
 
 app.use(errorHandler);
