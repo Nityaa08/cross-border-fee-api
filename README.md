@@ -1,5 +1,7 @@
 # Cross-Border Fee Calculation API
 
+[![CI](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml)
+
 **Live demo: [cross-border-fee-api.vercel.app](https://cross-border-fee-api.vercel.app)** · by [Nityashree S](https://nityashree.in)
 
 [![Demo page: a form for a cross-border payment and the itemised all-in price](docs/screenshot.png)](https://cross-border-fee-api.vercel.app)
@@ -306,7 +308,7 @@ Runs 40 tests across three suites (94.3% line coverage with `npx jest --coverage
 
 ## Deployment
 
-Deployed on Vercel's free tier from this repository: every push to `main` deploys. `vercel.json` sends every path to the Express app in `api/index.ts`. Optional environment variable: `RATE_LIMIT_PER_MINUTE` (default 30).
+Deployed on Vercel's free tier from this repository: every push to `main` deploys. GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, a type-check (`tsc --noEmit`), the tests and the build on every push and pull request to `main`; Vercel deploys separately, so a red CI run flags a bad push rather than blocking the deploy. `vercel.json` sends every path to the Express app in `api/index.ts`. Optional environment variable: `RATE_LIMIT_PER_MINUTE` (default 30).
 
 ---
 
