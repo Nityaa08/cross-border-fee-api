@@ -12,6 +12,15 @@ describe("Demo page and config", () => {
     expect(res.text).toContain("/api/v1/calculate");
   });
 
+  test("the demo page shows the self-check, the four-market comparison and the summary", async () => {
+    const res = await request(app).get("/demo");
+    expect(res.text).toContain('fetch("/api/v1/selfcheck")');
+    expect(res.text).toContain('id="compare"');
+    expect(res.text).toContain("The 60-second version");
+    const index = await request(app).get("/").set("Accept", "application/json");
+    expect(index.body.endpoints.selfcheck).toBe("GET /api/v1/selfcheck");
+  });
+
   test("GET / for an API client still returns the JSON index", async () => {
     const res = await request(app).get("/").set("Accept", "*/*");
     expect(res.status).toBe(200);

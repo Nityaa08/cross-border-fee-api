@@ -195,6 +195,50 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:24px 0 40px;colo
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--ink-2)}
 
+
+/* ── Proof chips in the band ── */
+.proofs{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.proofs li{font-size:13px;color:var(--band-muted);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:7px}
+.proofs b{color:var(--band-ink);font-weight:650}
+.proofs i{width:8px;height:8px;border-radius:50%;background:#9fe3cb;flex:none}
+.proofs i.bad{background:#f0a565}
+/* ── Same price, four countries ── */
+.cmp{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 20px}
+.cmp-row{display:grid;grid-template-columns:130px minmax(0,1fr) 84px 150px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.cmp-row:first-child{border-top:0}
+.cmp-row .who b{display:block;font-size:15px}
+.cmp-row .who small{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.cmp-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--field)}
+.cmp-bar div{height:100%}
+.cmp-row .mk{font-family:var(--mono);font-weight:700;font-size:15px;text-align:right}
+.cmp-row .fin{font-family:var(--mono);font-size:13px;color:var(--ink-2);text-align:right}
+.cmp-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);margin-top:12px}
+.cmp-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+/* ── 60-second version ── */
+.brief{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:22px}
+.brief dl{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 20px}
+.brief dl div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.brief dl div:first-child{border-top:0}
+.brief dt{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);padding-top:2px}
+.brief dd{color:var(--ink-2)}
+.brief dd b{color:var(--ink)}
+.checks{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.checks h3{font-size:15px;letter-spacing:-.01em}
+.checks p{font-size:13px;color:var(--muted);margin-top:4px}
+.checks ul{list-style:none;margin-top:12px;display:grid;gap:8px}
+.checks li{display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:var(--ink-2)}
+.checks li .ok{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--brand);border:1px solid var(--brand);border-radius:4px;padding:0 5px;flex:none}
+.checks li .no{color:var(--tax);border-color:var(--tax)}
+.checks li small{font-family:var(--mono);color:var(--muted);margin-left:auto;white-space:nowrap}
+@media (max-width:960px){.brief{grid-template-columns:1fr}}
+@media (max-width:560px){
+  .cmp{padding:4px 14px}
+  .cmp-row{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px}
+  .cmp-bar{grid-column:1/-1;grid-row:2}
+  .cmp-row .fin{display:none}
+  .brief dl div{grid-template-columns:1fr;gap:2px}
+  .checks li small{display:none}
+}
 @media (max-width:960px){
   .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"form" "receipt" "sources";grid-template-rows:auto;gap:28px}
   .receipt-col{max-width:460px;width:100%;margin:0 auto}
@@ -225,6 +269,7 @@ footer a{color:var(--ink-2)}
   <header class="wrap top">
     <a class="brand" href="/"><span class="mark" aria-hidden="true">⇄</span>Cross-Border Fee API <small>DEMO</small></a>
     <nav aria-label="Site">
+      <a class="hide-sm" href="#brief">In 60 seconds</a>
       <a href="#how">How it works</a>
       <a class="hide-sm" href="#api">API</a>
       <a href="https://github.com/Nityaa08/cross-border-fee-api">GitHub</a>
@@ -236,6 +281,11 @@ footer a{color:var(--ink-2)}
       <p class="kicker"><b>POST</b> /api/v1/calculate · TypeScript · Express</p>
       <h1>The price tag says $100. <em>The receipt tells the truth.</em></h1>
       <p class="lede">Pick a corridor into Mexico, Colombia, Brazil or Argentina. The API itemises the FX spread, processing fee, cross-border surcharge and local tax, and returns the all-in price in the customer's currency.</p>
+      <ul class="proofs" aria-label="Evidence">
+        <li><i aria-hidden="true"></i><b>48</b> Jest tests · CI on every push</li>
+        <li><i aria-hidden="true" id="sc-dot"></i><span id="sc-text">Self-check: running…</span></li>
+        <li><i aria-hidden="true"></i>Every tax rate cites a source</li>
+      </ul>
     </div>
     <p class="stamp" aria-hidden="true"><b>4 markets</b>3 payment methods<br>1 config file</p>
   </div>
@@ -312,6 +362,31 @@ footer a{color:var(--ink-2)}
       </div>
     </div>
   </div>
+
+  <section class="section" id="compare" aria-labelledby="compare-title">
+    <h2 id="compare-title">Same $100 product, four different prices</h2>
+    <p class="sub">A US shop charges $100 by card. This is what each customer really pays, from four live calls to <code>POST /api/v1/calculate</code>. The bar is the markup over the mid-market price, split by fee.</p>
+    <div class="cmp" id="cmp"><div class="cmp-row"><span class="who"><b>Loading…</b></span></div></div>
+    <div class="cmp-legend" aria-hidden="true"><span><i style="background:var(--s-fx)"></i>FX spread</span><span><i style="background:var(--s-proc)"></i>Processing</span><span><i style="background:var(--s-xb)"></i>Cross-border</span><span><i style="background:var(--s-tax)"></i>Tax</span></div>
+    <p class="note">Illustrative rates. Argentina still uses an out-of-date 30% rule, so its bar is too long; Mexico's and Colombia's IVA rates have not been checked against a source. Both are listed under Known Limitations in the README.</p>
+  </section>
+
+  <section class="section" id="brief" aria-labelledby="brief-title">
+    <h2 id="brief-title">The 60-second version</h2>
+    <div class="brief">
+      <dl>
+        <div><dt>Problem</dt><dd>A cross-border price hides four separate charges, so customers are surprised at checkout and support teams can't explain the total.</dd></div>
+        <div><dt>What I built</dt><dd>A <b>TypeScript / Express API</b> that returns the all-in price as itemised lines, each with its rate and the rule that triggered it. Every number lives in one config file; one pure function applies them in a fixed order.</dd></div>
+        <div><dt>Proof</dt><dd><b>48 tests</b> with exact amounts, CI on every push, and a self-check over <b id="sc-n2">10,000+</b> quotes that runs live on this page.</dd></div>
+        <div><dt>Engineering</dt><dd>Input validation with field-level 400s, rate limiting, cent-exact rounding (half cents up, despite floating point), sourced tax rates, serverless deploy on Vercel.</dd></div>
+      </dl>
+      <div class="checks" aria-labelledby="checks-title">
+        <h3 id="checks-title">Self-check, run by the server</h3>
+        <p id="sc-sub">Every market, method, merchant side and price currency, at prices from 0.01 up. <a href="/api/v1/selfcheck">Raw JSON</a></p>
+        <ul id="sc-list"><li>Running…</li></ul>
+      </div>
+    </div>
+  </section>
 
   <section class="section" id="how" aria-labelledby="how-title">
     <h2 id="how-title">How it works</h2>
@@ -552,6 +627,41 @@ footer a{color:var(--ink-2)}
     $("sources-list").innerHTML = "<dt>Error</dt><dd>Could not load <code>/api/v1/config</code>.</dd>";
   });
 
+
+  // ── Self-check (GET /api/v1/selfcheck): every receipt property over the quote grid ──
+  fetch("/api/v1/selfcheck").then(function(r){ return r.json(); }).then(function(sc){
+    var n = sc.quotes.toLocaleString("en-US");
+    $("sc-text").innerHTML = "<b>" + n + "</b> quotes self-checked: " + (sc.passed ? "all add up" : "failures found");
+    if (!sc.passed) $("sc-dot").className = "bad";
+    $("sc-n2").textContent = n;
+    $("sc-list").innerHTML = sc.invariants.map(function(i){
+      var ok = i.failed === 0;
+      return '<li><span class="ok' + (ok ? '' : ' no') + '">' + (ok ? 'PASS' : 'FAIL') + '</span>' + esc(i.description) +
+        '<small>' + (ok ? i.checked.toLocaleString("en-US") + " / " + i.checked.toLocaleString("en-US") : i.failed + " failed") + '</small></li>';
+    }).join("");
+  }).catch(function(){ $("sc-text").textContent = "Self-check unavailable"; $("sc-list").innerHTML = "<li>Could not load /api/v1/selfcheck.</li>"; });
+
+  // ── Same $100 into each market ──
+  (function(){
+    var markets = ["MX", "CO", "BR", "AR"];
+    Promise.all(markets.map(function(code){
+      return fetch("/api/v1/calculate", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({original_amount:100, original_currency:"USD", customer_country:code, merchant_country:"US", payment_method:"card"})})
+        .then(function(r){ if (!r.ok) throw new Error(String(r.status)); return r.json(); });
+    })).then(function(rs){
+      var max = Math.max.apply(null, rs.map(function(r){ return r.total_fees_pct; })) || 1;
+      $("cmp").innerHTML = rs.map(function(r, i){
+        var code = markets[i];
+        var segs = r.fees.map(function(f){
+          return '<div style="width:' + (f.amount / r.settlement_amount / max * 100).toFixed(2) + '%;background:' + FEES[f.name].color + '" title="' + esc(FEES[f.name].label) + '"></div>';
+        }).join("");
+        return '<div class="cmp-row"><span class="who"><b>' + esc(COUNTRY_NAMES[code]) + '</b><small>US → ' + code + ' · ' + esc(r.final_currency) + '</small></span>' +
+          '<div class="cmp-bar" role="img" aria-label="Markup ' + pct(r.total_fees_pct) + '">' + segs + '</div>' +
+          '<span class="mk">+' + pct(r.total_fees_pct) + '</span>' +
+          '<span class="fin">' + num(r.final_customer_price) + ' ' + esc(r.final_currency) + '</span></div>';
+      }).join("");
+    }).catch(function(){ $("cmp").innerHTML = '<div class="cmp-row"><span class="who">Could not load the comparison (rate limited? try again in a minute).</span></div>'; });
+  })();
   $("form").addEventListener("submit", calculate);
   $("form").addEventListener("change", function(e){ if (e.target.id === "customer") fillCurrencies(); sync(); });
   $("form").addEventListener("input", sync);

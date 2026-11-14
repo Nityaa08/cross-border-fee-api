@@ -12,7 +12,7 @@ Needs Node 20 or later. No keys, no database.
 
 ```bash
 npm install && npm run dev   # demo page at http://localhost:3000
-npm test                     # 42 Jest tests
+npm test                     # 48 Jest tests
 ```
 
 Then call the API from another terminal:
@@ -26,6 +26,15 @@ curl -X POST http://localhost:3000/api/v1/calculate \
 
 A TypeScript/Express API that returns an **itemised estimate of the all-in price a customer pays** for a cross-border purchase into Mexico, Colombia, Brazil or Argentina: FX spread, processing fee, cross-border surcharge and tax, each as its own line. It is a proof of concept: the rates are illustrative constants (FX rates dated 2026-02-21) and the Argentina tax rule is out of date (see [Known Limitations](#known-limitations-checked-2026-11-14)).
 
+## In 60 seconds
+
+| | |
+|---|---|
+| **Problem** | A cross-border price hides four separate charges (FX spread, processing, cross-border fee, local tax), so customers are surprised at checkout and support teams can't explain the total. |
+| **What I built** | A TypeScript/Express API that returns the all-in price as itemised lines, each with its rate and the rule that triggered it. Every number lives in one config file; one pure function applies them in a fixed order. |
+| **Proof** | 48 Jest tests with exact amounts, CI on every push, and a [self-check](#self-check) over 10,512 quotes (every market, method, merchant side and price currency) that the server runs and the demo page shows. |
+| **Engineering** | Field-level 400s, rate limiting, cent-exact rounding (half cents up, despite floating point), tax rates with a source and a check date, serverless deploy on Vercel. |
+
 ## Why
 
 A price of USD 100 can cost a customer in Argentina far more than one in Colombia, and the difference is spread over four separate charges. Showing each charge, with its rate and the rule that triggered it, makes the price explainable to a customer, a merchant and a support team. The design goal was transparency: one config file holds every number, and a pure function applies them in a fixed order.
@@ -34,6 +43,8 @@ A price of USD 100 can cost a customer in Argentina far more than one in Colombi
 
 The live page is a form over the real API (the same `POST /api/v1/calculate` a client would call). Pick a corridor (merchant country → customer country), a price and a payment method, and the page prints a checkout receipt: each fee line with the rule behind it, the total in local currency, the effective markup, a bar showing how the fees split, and the matching `curl` command. A "rates & sources" note under the form reads `GET /api/v1/config` to show where the FX rate and the tax rate come from and when the tax rate was last checked. The page loads no fonts or scripts from other sites. Browsers get the page at `/`; API clients that ask for JSON at `/` still get the JSON index.
 
+Below the checkout, **"Same $100 product, four different prices"** makes four live calls (a US shop, $100 by card, into each market) and draws the markup over mid-market as a bar split by fee: from +12.4% in Brazil to +42.4% in Argentina, whose tax rule is out of date (see Known Limitations). **"The 60-second version"** summarises the project and shows the live self-check.
+
 The public deployment is rate limited (30 calculations a minute per client IP, per running instance) and needs no keys or secrets.
 
 ## Quick Start
@@ -41,7 +52,7 @@ The public deployment is rate limited (30 calculations a minute per client IP, p
 ```bash
 npm install
 npm run dev        # http://localhost:3000 (demo page) with auto-reload
-npm test           # 42 Jest tests
+npm test           # 48 Jest tests
 
 # or build and run
 npm run build && npm start
@@ -92,6 +103,20 @@ src/
 - **Config-driven**: Every fee rate, FX spread, and tax rule lives in `src/config/fees.ts`. Zero magic numbers in business logic.
 - **Pure engine**: `calculateFees()` is a stateless pure function, deterministic for identical inputs and easy to test.
 - **Layered**: Config → Engine → API are cleanly separated. The engine has no knowledge of HTTP.
+
+## Self-check
+
+`GET /api/v1/selfcheck` runs the calculator over a grid of 10,512 quotes (4 markets × 3 payment methods × domestic and US merchant × USD and local price currency × prices from 0.01 to about 300 in steps of 1.37) and checks five properties every receipt must have:
+
+| Property | Why it matters |
+|---|---|
+| The fee lines add up to `total_fees` | Before 2026-11-13 about a third of quotes were a cent off |
+| Base amount + `total_fees` = final price | The receipt's total is the sum of what it shows |
+| No fee line is negative | A negative fee would be a discount nobody configured |
+| Every line is in the customer's currency | Mixed currencies on one receipt can't be added |
+| A domestic payment has no cross-border fee | The rule that only cross-border payments pay it |
+
+The report lists each property with its count and the first failing request, so a failure can be reproduced. The config is static, so the server runs it once per process (about 70 ms). A test feeds it a calculator with a one-cent drift and checks that it is caught.
 
 ## API Documentation
 
@@ -324,10 +349,11 @@ Also fixed on 2026-11-14: the maximum `original_amount` was 1,000,000 in whateve
 npm test
 ```
 
-Runs 43 tests across three suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
-- **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
+Runs 48 tests across four suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
+- **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across 10,512 quotes, half-cent rounding, determinism check, error handling
 - **API tests** (21): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes, amounts below 0.01 and amounts above 1,000,000 USD or its local equivalent as 400), server errors as 500 without internal detail, health check
-- **Demo tests** (9): the HTML page for browsers and JSON for API clients at `/`, the config endpoint (including where each tax rate comes from), rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
+- **Self-check tests** (4): every property holds on every quote, the grid covers every market, method, merchant side and currency, a one-cent drift is caught with the failing request, and the endpoint serves the report
+- **Demo tests** (11): the page's self-check, four-market comparison and summary, the HTML page for browsers and JSON for API clients at `/`, the config endpoint (including where each tax rate comes from), rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
 
 ## Deployment
 
