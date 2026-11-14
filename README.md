@@ -4,7 +4,25 @@
 
 **Live demo: [cross-border-fee-api.vercel.app](https://cross-border-fee-api.vercel.app)** · by [Nityashree S](https://nityashree.in)
 
-[![Demo page: a form for a cross-border payment and the itemised all-in price](docs/screenshot.png)](https://cross-border-fee-api.vercel.app)
+[![Demo page: a checkout form for a US to Brazil card payment that prints an itemised receipt with the FX spread, processing fee, cross-border fee and IOF tax](docs/screenshot.png)](https://cross-border-fee-api.vercel.app)
+
+## Run it in 1 minute
+
+Needs Node 20 or later. No keys, no database.
+
+```bash
+npm install && npm run dev   # demo page at http://localhost:3000
+npm test                     # 42 Jest tests
+```
+
+Then call the API from another terminal:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"original_amount":250,"original_currency":"USD","customer_country":"BR","merchant_country":"US","payment_method":"card"}'
+# → final_customer_price 1642.39 BRL, with each fee as its own line
+```
 
 A TypeScript/Express API that returns an **itemised estimate of the all-in price a customer pays** for a cross-border purchase into Mexico, Colombia, Brazil or Argentina: FX spread, processing fee, cross-border surcharge and tax, each as its own line. It is a proof of concept: the rates are illustrative constants (FX rates dated 2026-02-21) and the Argentina tax rule is out of date (see [Known Limitations](#known-limitations-checked-2026-11-14)).
 
@@ -14,7 +32,7 @@ A price of USD 100 can cost a customer in Argentina far more than one in Colombi
 
 ## The demo
 
-The live page is a form over the real API (the same `POST /api/v1/calculate` a client would call). Pick a scenario or enter your own; the page shows the final price, a breakdown bar, each fee line with its rule, and the matching `curl` command. Browsers get the page at `/`; API clients that ask for JSON at `/` still get the JSON index.
+The live page is a form over the real API (the same `POST /api/v1/calculate` a client would call). Pick a corridor (merchant country → customer country), a price and a payment method, and the page prints a checkout receipt: each fee line with the rule behind it, the total in local currency, the effective markup, a bar showing how the fees split, and the matching `curl` command. A "rates & sources" note under the form reads `GET /api/v1/config` to show where the FX rate and the tax rate come from and when the tax rate was last checked. The page loads no fonts or scripts from other sites. Browsers get the page at `/`; API clients that ask for JSON at `/` still get the JSON index.
 
 The public deployment is rate limited (30 calculations a minute per client IP, per running instance) and needs no keys or secrets.
 
