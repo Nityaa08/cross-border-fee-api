@@ -23,7 +23,7 @@ The public deployment is rate limited (30 calculations a minute per client IP, p
 ```bash
 npm install
 npm run dev        # http://localhost:3000 (demo page) with auto-reload
-npm test           # 41 Jest tests
+npm test           # 42 Jest tests
 
 # or build and run
 npm run build && npm start
@@ -85,7 +85,7 @@ Calculate all-in customer price for a transaction.
 
 | Field              | Type   | Required | Values                                     |
 |--------------------|--------|----------|--------------------------------------------|
-| `original_amount`  | number | yes      | 0.01 to 1,000,000                          |
+| `original_amount`  | number | yes      | 0.01 up to 1,000,000 USD or its equivalent at the mid-market rate (e.g. 4,150,000,000 COP) |
 | `original_currency`| string | yes      | `USD`, or the customer's own currency (e.g. `MXN` for `MX`) |
 | `customer_country` | string | yes      | `MX`, `CO`, `BR`, `AR`                     |
 | `merchant_country` | string | yes      | Any ISO 3166-1 alpha-2 code (e.g., `US`, `MX`); case-insensitive |
@@ -288,6 +288,8 @@ Fixed on 2026-11-13: the fee lines always add up to `total_fees`, and `settlemen
 
 Fixed on 2026-11-14: Brazil's IOF is 3.5%, not 6.5%. The 3.5% rate on card purchases abroad is art. 15-B VII of Decree 6,306/2007 as worded by Decree 12,499/2025 (it was first set by Decree 12,466/2025 from 23 May 2025, which Decree 12,499 replaced). Congress suspended the decrees on 25 June 2025; the Supreme Federal Court reinstated Decree 12,499 on 17 July 2025, not retroactively. Sources: the decree text published by the Câmara dos Deputados, and EY Global Tax News, 18 July 2025 ("Brazilian Supreme Federal Court partially reinstates government decree related to changes in IOF"). Each country's config now carries a `tax_rule` with its legal basis, source and the date it was checked, and the tax fee line names the tax (for example "IOF (3.5%)").
 
+Also fixed on 2026-11-14: the maximum `original_amount` was 1,000,000 in whatever currency the price was in, so a 1,200,000 COP price (about 289 USD) was rejected with a 400 while 1,000,000 USD was accepted. The limit is now 1,000,000 USD converted at the mid-market rate (4,150,000,000 COP, 1,050,000,000 ARS), and the demo form no longer caps the field at 1,000,000.
+
 - **Argentina "PAIS tax" is out of date.** Argentina's Impuesto PAIS ended on 23 December 2024 (EY Global Tax News, 7 January 2025). The 30% rate in `src/config/fees.ts` is labelled PAIS; a separate 30% income-tax reverse withholding continued on card purchases abroad, per the same report. Local press reports changes to that withholding since, which could not be confirmed from a government or Big-4 source, so the rate is unchanged and its `tax_rule.checked_on` is `null`.
 - **Mexico and Colombia IVA rates (16%, 19%) are not checked against a source** (`checked_on: null`); they are the standard VAT rates, and the rules for digital services sold from abroad are simplified to a flat rate on the base amount.
 - **Brazil's IOF is still in court.** The Supreme Federal Court's 17 July 2025 decision is an injunction; a final ruling could change the rate again.
@@ -304,9 +306,9 @@ Fixed on 2026-11-14: Brazil's IOF is 3.5%, not 6.5%. The 3.5% rate on card purch
 npm test
 ```
 
-Runs 41 tests across three suites (94.3% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-13):
+Runs 42 tests across three suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
 - **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
-- **API tests** (20): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes and amounts below 0.01 as 400), server errors as 500 without internal detail, health check
+- **API tests** (21): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes, amounts below 0.01 and amounts above 1,000,000 USD or its local equivalent as 400), server errors as 500 without internal detail, health check
 - **Demo tests** (9): the HTML page for browsers and JSON for API clients at `/`, the config endpoint (including where each tax rate comes from), rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
 
 ## Deployment

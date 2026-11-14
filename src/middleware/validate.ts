@@ -7,10 +7,14 @@ import {
 } from "../types";
 import config from "../config/fees";
 import { ISO_3166_ALPHA2 } from "../config/countries";
+import { usdMidMarketRate } from "../engine/fx";
 
 // Amounts are rounded to 2 decimals, so anything smaller is a zero price
 // that would still be charged the flat processing fee.
 const MIN_AMOUNT = 0.01;
+// The upper limit is in USD and converted at the mid-market rate, so it
+// means the same in every currency (1,000,000 USD = 4,150,000,000 COP).
+const MAX_AMOUNT_USD = 1_000_000;
 
 const VALID_COUNTRIES: CustomerCountry[] = ["MX", "CO", "BR", "AR"];
 const VALID_CURRENCIES: Currency[] = ["USD", "MXN", "COP", "BRL", "ARS"];
@@ -43,11 +47,17 @@ export function validateFeeRequest(
       field: "original_amount",
       message: `original_amount must be at least ${MIN_AMOUNT}`,
     });
-  } else if (body.original_amount > 1_000_000) {
-    errors.push({
-      field: "original_amount",
-      message: "original_amount must not exceed 1,000,000",
-    });
+  } else if (VALID_CURRENCIES.includes(body.original_currency)) {
+    const max = MAX_AMOUNT_USD * usdMidMarketRate(body.original_currency as Currency);
+    if (body.original_amount > max) {
+      errors.push({
+        field: "original_amount",
+        message:
+          body.original_currency === "USD"
+            ? `original_amount must not exceed ${max.toLocaleString("en-US")} USD`
+            : `original_amount must not exceed ${max.toLocaleString("en-US")} ${body.original_currency} (${MAX_AMOUNT_USD.toLocaleString("en-US")} USD)`,
+      });
+    }
   }
 
   if (!body.original_currency) {

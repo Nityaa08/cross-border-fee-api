@@ -202,6 +202,27 @@ describe("API Integration Tests", () => {
     expect(res.status).toBe(200);
   });
 
+  test("POST /api/v1/calculate — the maximum amount is 1,000,000 USD or its local equivalent", async () => {
+    // The cap was 1,000,000 in any currency: a 1,200,000 COP price (about
+    // 289 USD) was rejected, while 1,000,000 USD was accepted.
+    const cop = { ...valid, original_currency: "COP", customer_country: "CO", merchant_country: "CO" };
+    const ok = await request(app).post("/api/v1/calculate").send({ ...cop, original_amount: 1_200_000 });
+    expect(ok.status).toBe(200);
+    expect(ok.body.settlement_amount).toBe(1_200_000);
+
+    // 1,000,000 USD × 4,150 = 4,150,000,000 COP is the limit.
+    const atLimit = await request(app).post("/api/v1/calculate").send({ ...cop, original_amount: 4_150_000_000 });
+    expect(atLimit.status).toBe(200);
+    const over = await request(app).post("/api/v1/calculate").send({ ...cop, original_amount: 4_150_000_001 });
+    expect(over.status).toBe(400);
+    expect(over.body.details[0].field).toBe("original_amount");
+    expect(over.body.details[0].message).toContain("4,150,000,000 COP");
+
+    const usdOver = await request(app).post("/api/v1/calculate").send({ ...valid, original_amount: 1_000_000.01 });
+    expect(usdOver.status).toBe(400);
+    expect(usdOver.body.details[0].field).toBe("original_amount");
+  });
+
   test("GET /health — returns ok", async () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);

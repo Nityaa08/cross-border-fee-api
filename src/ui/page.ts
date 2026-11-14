@@ -124,7 +124,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       <h2>Transaction</h2>
       <label for="amount">Price</label>
       <div class="row">
-        <input id="amount" name="amount" type="number" inputmode="decimal" min="0.01" max="1000000" step="0.01" value="100" required>
+        <input id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" value="100" required>
         <select id="currency" name="currency" aria-label="Currency"></select>
       </div>
 
