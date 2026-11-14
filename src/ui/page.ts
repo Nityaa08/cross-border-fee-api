@@ -153,7 +153,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
   <div class="note" role="note">
     <span aria-hidden="true">!</span>
-    <span>Illustrative numbers. FX rates are fixed constants dated 2026-02-21, not live quotes, and two tax rules are out of date (Brazil IOF, Argentina "PAIS"). The point is the engine and its transparency, not the rates.</span>
+    <span>Illustrative numbers. FX rates are fixed constants dated 2026-02-21, not live quotes, and the Argentina tax rule ("PAIS") is out of date. The point is the engine and its transparency, not the rates.</span>
   </div>
 
   <section class="section" id="how">

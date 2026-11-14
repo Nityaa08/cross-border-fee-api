@@ -1,6 +1,6 @@
 # Fee Calculation Logic & Assumptions
 
-> Note (2026-10-28): the Argentina PAIS rule and the Brazil IOF rate below are out of date. See Known Limitations in the README.
+> Note (2026-11-14): the Brazil IOF rate was updated to 3.5% (Decree 12,499/2025). The Argentina PAIS rule below is still out of date. See Known Limitations in the README.
 
 ## How the Calculation Works
 
@@ -57,7 +57,7 @@ Applied when the transaction is cross-border **or** involves foreign currency:
 |---------|------|----------|
 | MX | 16% | IVA (value-added tax on digital services) |
 | CO | 19% | IVA on cross-border services |
-| BR | 6.5% | IOF (tax on foreign exchange operations) |
+| BR | 3.5% | IOF on card purchases abroad (Decree 12,499/2025) |
 | AR | 30% | PAIS tax on foreign currency purchases |
 
 Argentina's 30% PAIS tax is the single largest cost driver and explains why Argentine customers see 40%+ markups on USD-denominated goods.
@@ -77,7 +77,7 @@ Argentina's 30% PAIS tax is the single largest cost driver and explains why Arge
 For a $100 USD cross-border card transaction:
 - **Mexico**: ~23% total markup (IVA dominates)
 - **Colombia**: ~25% total markup (highest IVA)
-- **Brazil**: ~15% total markup (IOF is lower)
+- **Brazil**: ~12% total markup (IOF is 3.5%)
 - **Argentina**: ~43% total markup (PAIS tax is extreme)
 
 For a domestic same-currency transaction, fees drop to **2–4%** (processing only).

@@ -51,9 +51,18 @@ export interface PaymentMethodFee {
   percentage_fee: number; // as decimal, e.g. 0.035 = 3.5%
 }
 
+/** Where a country's tax rate comes from, so the number can be checked. */
+export interface TaxRule {
+  name: string; // shown in the fee description, e.g. "IOF"
+  basis: string; // the law or rule the rate comes from
+  source: string | null; // where the rate was checked, null if never checked
+  checked_on: string | null; // YYYY-MM-DD the rate was last checked, or null
+}
+
 export interface CountryConfig {
   currency: Currency;
   tax_withholding_pct: number; // VAT / IVA on digital services
+  tax_rule: TaxRule;
   cross_border_fee_pct: number;
   payment_methods: Record<PaymentMethod, PaymentMethodFee>;
 }

@@ -25,6 +25,22 @@ describe("Demo page and config", () => {
     expect(res.body.fx_rates.every((r: { updated_at: string }) => /^\d{4}-\d{2}-\d{2}/.test(r.updated_at))).toBe(true);
   });
 
+  test("GET /api/v1/config says where each tax rate comes from", async () => {
+    const res = await request(app).get("/api/v1/config");
+    const byCode = Object.fromEntries(
+      res.body.countries.map((c: { code: string }) => [c.code, c])
+    );
+    for (const c of Object.values(byCode) as { tax_rule: { name: string; basis: string } }[]) {
+      expect(c.tax_rule.name).toBeTruthy();
+      expect(c.tax_rule.basis).toBeTruthy();
+    }
+    // Brazil's rate is checked against a source and dated; Argentina's is not.
+    expect(byCode.BR.tax_withholding_pct).toBe(0.035);
+    expect(byCode.BR.tax_rule.basis).toContain("12,499/2025");
+    expect(byCode.BR.tax_rule.checked_on).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(byCode.AR.tax_rule.checked_on).toBeNull();
+  });
+
   test("the calculate endpoint sends rate-limit headers", async () => {
     const res = await request(app).post("/api/v1/calculate").send({
       original_amount: 100,

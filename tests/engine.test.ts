@@ -101,9 +101,10 @@ describe("Fee Calculation Engine", () => {
     expect(findFee(res, "cross_border_fee")).toBeDefined();
     expect(findFee(res, "tax_withholding")).toBeDefined();
 
-    // IOF-like tax should be ~6.5%
+    // IOF on card purchases abroad: 3.5% (Decree 12,499/2025, art. 15-B VII).
     const tax = findFee(res, "tax_withholding")!;
-    expect(tax.rate).toBe(0.065);
+    expect(tax.rate).toBe(0.035);
+    expect(tax.description).toContain("IOF");
 
     // Mid-market base: 250 × 5.85 = 1,462.50 BRL.
     expect(res.settlement_amount).toBe(1462.5);
@@ -112,11 +113,11 @@ describe("Fee Calculation Engine", () => {
       fx_conversion_cost: 36.56, // 2.5% of 1,462.50 = 36.5625
       payment_processing_fee: 62.89, // 4.2% = 61.425, + 0.25 × 5.85 = 1.4625
       cross_border_fee: 29.25, // 2.0% of 1,462.50
-      tax_withholding: 95.06, // 6.5% of 1,462.50 = 95.0625
+      tax_withholding: 51.19, // 3.5% of 1,462.50 = 51.1875
     });
-    expect(res.total_fees).toBe(223.76);
-    expect(res.total_fees_pct).toBe(0.153);
-    expect(res.final_customer_price).toBe(1686.26);
+    expect(res.total_fees).toBe(179.89);
+    expect(res.total_fees_pct).toBe(0.123);
+    expect(res.final_customer_price).toBe(1642.39);
   });
 
   // ── Scenario 4: Argentine customer, cash_voucher, high tax ──

@@ -118,7 +118,7 @@ export function calculateFees(
       rate: countryConfig.tax_withholding_pct,
       amount: round2(taxAmount),
       currency: settlementCurrency,
-      description: `Tax/withholding (${(countryConfig.tax_withholding_pct * 100).toFixed(1)}%) on cross-border/foreign-currency transaction`,
+      description: `${countryConfig.tax_rule.name} (${(countryConfig.tax_withholding_pct * 100).toFixed(1)}%) on cross-border/foreign-currency transaction`,
     });
   }
 

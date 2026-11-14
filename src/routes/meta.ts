@@ -14,6 +14,7 @@ router.get("/", (_req: Request, res: Response) => {
     code,
     currency: c.currency,
     tax_withholding_pct: c.tax_withholding_pct,
+    tax_rule: c.tax_rule,
     cross_border_fee_pct: c.cross_border_fee_pct,
     payment_methods: c.payment_methods,
   }));
@@ -24,7 +25,8 @@ router.get("/", (_req: Request, res: Response) => {
     notes: [
       "Rates are illustrative constants, not live quotes.",
       "FX rates are dated 2026-02-21.",
-      "The Brazil IOF rate (6.5%) and the Argentina 30% rule labelled PAIS are out of date; see the README.",
+      "Brazil IOF is 3.5% on card purchases abroad (Decree 12,499/2025), checked 2026-11-14.",
+      "The Argentina 30% rule labelled PAIS is out of date, and the MX and CO IVA rates have not been checked against a source; see the README.",
     ],
   });
 });
