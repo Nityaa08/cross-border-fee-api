@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml)
 
-**Live demo: [cross-border-fee-api.vercel.app](https://cross-border-fee-api.vercel.app)** · by [Nityashree S](https://nityashree.in)
+**Live demo: [cross-border-fee-api.vercel.app/demo](https://cross-border-fee-api.vercel.app/demo)** · by [Nityashree S](https://nityashree.in)
 
 [![Demo page: a checkout form for a US to Brazil card payment that prints an itemised receipt with the FX spread, processing fee, cross-border fee and IOF tax](docs/screenshot.png)](https://cross-border-fee-api.vercel.app)
 
@@ -324,7 +324,7 @@ Also fixed on 2026-11-14: the maximum `original_amount` was 1,000,000 in whateve
 npm test
 ```
 
-Runs 42 tests across three suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
+Runs 43 tests across three suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
 - **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across about 14,000 quotes, half-cent rounding, determinism check, error handling
 - **API tests** (21): HTTP integration, validation errors (including malformed JSON, unsupported currency pairs, merchant countries that are not ISO codes, amounts below 0.01 and amounts above 1,000,000 USD or its local equivalent as 400), server errors as 500 without internal detail, health check
 - **Demo tests** (9): the HTML page for browsers and JSON for API clients at `/`, the config endpoint (including where each tax rate comes from), rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel

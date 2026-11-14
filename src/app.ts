@@ -44,6 +44,12 @@ app.get("/", (req, res) => {
   });
 });
 
+// A stable link to the demo page for anything that can't send a browser Accept header
+// (LinkedIn and other link previews fetch with Accept: */*, which "/" answers with JSON).
+app.get("/demo", (_req, res) => {
+  res.type("html").send(DEMO_PAGE);
+});
+
 app.use("/api/v1/calculate", calculateLimit, calculateRouter);
 app.use("/api/v1/config", metaRouter);
 app.use("/health", healthRouter);

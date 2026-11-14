@@ -16,6 +16,10 @@ export const DEMO_PAGE = `<!doctype html>
 <title>Cross-Border Fee API</title>
 <meta name="description" content="Itemised all-in price for a cross-border payment into Mexico, Colombia, Brazil or Argentina, printed as a checkout receipt. A demo by Nityashree S.">
 <meta name="theme-color" content="#073b30">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cross-Border Fee API">
+<meta property="og:description" content="The all-in price of a cross-border payment into Latin America, with every fee and the rule behind it on its own line.">
+<meta property="og:url" content="https://cross-border-fee-api.vercel.app/demo">
 <style>
 :root{
   --bg:#f3f6f5; --panel:#ffffff; --ink:#0f1f1a; --ink-2:#34463f; --muted:#56665f;

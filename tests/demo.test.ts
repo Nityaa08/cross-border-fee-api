@@ -103,3 +103,12 @@ describe("rateLimit middleware", () => {
     }
   });
 });
+
+describe("GET /demo", () => {
+  it("always serves the demo page, even to link-preview bots that send Accept: */*", async () => {
+    const res = await request(app).get("/demo").set("Accept", "*/*");
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/text\/html/);
+    expect(res.text).toContain('property="og:title"');
+  });
+});
