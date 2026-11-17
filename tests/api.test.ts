@@ -180,6 +180,70 @@ describe("API Integration Tests", () => {
     expect(crossBorder.description).toContain("merchant in DE");
   });
 
+  test("POST /api/v1/calculate — lower-case currency, customer country and method match upper case", async () => {
+    const upper = await request(app).post("/api/v1/calculate").send(valid);
+    const lower = await request(app)
+      .post("/api/v1/calculate")
+      .send({
+        ...valid,
+        original_currency: valid.original_currency.toLowerCase(),
+        customer_country: valid.customer_country.toLowerCase(),
+        payment_method: valid.payment_method.toUpperCase(),
+      });
+
+    expect(lower.status).toBe(200);
+    expect(lower.body).toEqual(upper.body);
+    expect(lower.body.original_currency).toBe(valid.original_currency);
+  });
+
+  test("POST /api/v1/calculate — the amount cap uses the currency even when it is lower case", async () => {
+    // 1,000,000 USD = 4,150,000,000 COP; "cop" must get the COP cap, not skip it.
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .send({ ...valid, original_amount: 4_150_000_001, original_currency: "cop", customer_country: "co" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details[0].field).toBe("original_amount");
+  });
+
+  test("POST /api/v1/calculate — a form-encoded body (curl -d without a JSON header) returns 415", async () => {
+    // curl -d '{...}' sends application/x-www-form-urlencoded. This used to answer
+    // 400 with all five fields "required", though the client had sent them all.
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .set("Content-Type", "application/x-www-form-urlencoded")
+      .send(JSON.stringify(valid));
+
+    expect(res.status).toBe(415);
+    expect(res.body.error).toBe("Unsupported Media Type");
+    expect(res.body.message).toContain("application/x-www-form-urlencoded");
+  });
+
+  test("POST /api/v1/calculate — a text/plain body returns 415", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .set("Content-Type", "text/plain")
+      .send(JSON.stringify(valid));
+
+    expect(res.status).toBe(415);
+  });
+
+  test("POST /api/v1/calculate — JSON with a charset parameter is still accepted", async () => {
+    const res = await request(app)
+      .post("/api/v1/calculate")
+      .set("Content-Type", "application/json; charset=utf-8")
+      .send(JSON.stringify(valid));
+
+    expect(res.status).toBe(200);
+  });
+
+  test("POST /api/v1/calculate — no body at all is still a 400 listing the required fields", async () => {
+    const res = await request(app).post("/api/v1/calculate");
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toHaveLength(5);
+  });
+
   test.each([0.001, 0.009])(
     "POST /api/v1/calculate — amount %p below 0.01 returns 400",
     async (original_amount) => {

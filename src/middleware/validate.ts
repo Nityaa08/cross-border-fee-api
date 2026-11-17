@@ -29,8 +29,36 @@ export function validateFeeRequest(
   res: Response,
   next: NextFunction
 ): void {
+  // A body that isn't JSON (curl -d sends form encoding unless told otherwise)
+  // never reaches express.json(), so every field would be reported missing
+  // even though the client sent them. Say what is actually wrong instead.
+  // An empty POST (Content-Length: 0, no type) falls through to the field errors.
+  const sentSomething =
+    Boolean(req.get("content-type")) ||
+    Number(req.get("content-length")) > 0 ||
+    req.get("transfer-encoding") !== undefined;
+  if (sentSomething && req.is("application/json") === false) {
+    res.status(415).json({
+      error: "Unsupported Media Type",
+      message: `Request body must be JSON with Content-Type: application/json (got ${req.get("content-type") || "no Content-Type"})`,
+    });
+    return;
+  }
+
   const errors: ValidationError[] = [];
   const body = req.body;
+
+  // Codes are matched case-insensitively, the same as merchant_country:
+  // "usd" and "mx" mean USD and MX, so pass them on in canonical case.
+  if (typeof body.original_currency === "string") {
+    body.original_currency = body.original_currency.toUpperCase();
+  }
+  if (typeof body.customer_country === "string") {
+    body.customer_country = body.customer_country.toUpperCase();
+  }
+  if (typeof body.payment_method === "string") {
+    body.payment_method = body.payment_method.toLowerCase();
+  }
 
   if (body.original_amount === undefined || body.original_amount === null) {
     errors.push({
