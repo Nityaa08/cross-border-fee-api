@@ -8,6 +8,8 @@
  * payment method) that prints an itemised receipt on the right. System font
  * stacks only, so the page makes no third-party requests.
  */
+
+import { copyWithFallback } from "./copy";
 export const DEMO_PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -665,8 +667,21 @@ footer a{color:var(--ink-2)}
   $("form").addEventListener("submit", calculate);
   $("form").addEventListener("change", function(e){ if (e.target.id === "customer") fillCurrencies(); sync(); });
   $("form").addEventListener("input", sync);
+  var copyWithFallback = ${copyWithFallback.toString()};
+  var copyTimer;
   $("copy").addEventListener("click", function(){
-    navigator.clipboard && navigator.clipboard.writeText($("curl-text").textContent).then(function(){ $("copy").textContent = "Copied"; setTimeout(function(){ $("copy").textContent = "Copy"; }, 1500); });
+    var btn = $("copy"), target = $("curl-text");
+    copyWithFallback(target.textContent, navigator.clipboard, function(label){
+      btn.textContent = label;
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(function(){ btn.textContent = "Copy"; }, 2000);
+    }, function(){
+      var range = document.createRange();
+      range.selectNodeContents(target);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
   });
 })();
 </script>
