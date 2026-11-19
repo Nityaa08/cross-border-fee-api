@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { methodNotAllowed } from "../middleware/notFound";
 import { validateFeeRequest } from "../middleware/validate";
 import { calculateFees } from "../engine/calculator";
 import { FeeCalculationRequest } from "../types";
@@ -22,5 +23,8 @@ router.post("/", validateFeeRequest, (req: Request, res: Response) => {
   const result = calculateFees(input);
   res.json(result);
 });
+
+// Any other method on this path: a JSON 405, not Express's HTML 404.
+router.all("/", methodNotAllowed(["POST"]));
 
 export default router;

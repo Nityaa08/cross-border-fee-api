@@ -12,7 +12,7 @@ Needs Node 20 or later. No keys, no database.
 
 ```bash
 npm install && npm run dev   # demo page at http://localhost:3000
-npm test                     # 54 Jest tests
+npm test                     # 64 Jest tests
 ```
 
 Then call the API from another terminal:
@@ -32,7 +32,7 @@ A TypeScript/Express API that returns an **itemised estimate of the all-in price
 |---|---|
 | **Problem** | A cross-border price hides four separate charges (FX spread, processing, cross-border fee, local tax), so customers are surprised at checkout and support teams can't explain the total. |
 | **What I built** | A TypeScript/Express API that returns the all-in price as itemised lines, each with its rate and the rule that triggered it. Every number lives in one config file; one pure function applies them in a fixed order. |
-| **Proof** | 54 Jest tests with exact amounts, CI on every push, and a [self-check](#self-check) over 10,512 quotes (every market, method, merchant side and price currency) that the server runs and the demo page shows. |
+| **Proof** | 64 Jest tests with exact amounts, CI on every push, and a [self-check](#self-check) over 10,512 quotes (every market, method, merchant side and price currency) that the server runs and the demo page shows. |
 | **Engineering** | Field-level 400s, rate limiting, cent-exact rounding (half cents up, despite floating point), tax rates with a source and a check date, serverless deploy on Vercel. |
 
 ## Why
@@ -52,7 +52,7 @@ The public deployment is rate limited (30 calculations a minute per client IP, p
 ```bash
 npm install
 npm run dev        # http://localhost:3000 (demo page) with auto-reload
-npm test           # 54 Jest tests
+npm test           # 64 Jest tests
 
 # or build and run
 npm run build && npm start
@@ -278,7 +278,7 @@ curl -X POST http://localhost:3000/api/v1/calculate \
 }
 ```
 
-A price in a currency with no rate to the customer's currency (for example an MXN price for a customer in CO) is also a 400 on `original_currency`. Malformed JSON returns 400 `{"error": "Malformed JSON", ...}`. A body that is not sent as JSON returns 415 `{"error": "Unsupported Media Type", ...}` naming the Content-Type that arrived: `curl -d '{...}'` without `-H "Content-Type: application/json"` sends form encoding, which used to come back as a 400 saying all five fields were missing. Unexpected server errors return 500 `{"error": "Internal server error"}`; the detail is logged, not sent to the client.
+A price in a currency with no rate to the customer's currency (for example an MXN price for a customer in CO) is also a 400 on `original_currency`. Malformed JSON returns 400 `{"error": "Malformed JSON", ...}`. A body that is not sent as JSON returns 415 `{"error": "Unsupported Media Type", ...}` naming the Content-Type that arrived: `curl -d '{...}'` without `-H "Content-Type: application/json"` sends form encoding, which used to come back as a 400 saying all five fields were missing. Calling an endpoint with the wrong method (opening `/api/v1/calculate` in a browser, for example) returns 405 with an `Allow` header and a curl example, and an unknown path returns a JSON 404 listing the endpoints; both used to be Express's HTML page "Cannot GET ...". Unexpected server errors return 500 `{"error": "Internal server error"}`; the detail is logged, not sent to the client.
 
 ---
 
@@ -349,10 +349,11 @@ Also fixed on 2026-11-14: the maximum `original_amount` was 1,000,000 in whateve
 npm test
 ```
 
-Runs 54 tests across four suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
+Runs 64 tests across five suites (94.9% line coverage with `npx jest --coverage --forceExit`, measured 2026-11-14):
 - **Engine tests** (12): All 5 scenarios with every fee amount and the final price checked exactly, the USD flat fee converted for local-currency prices, fee lines adding up to the totals across 10,512 quotes, half-cent rounding, determinism check, error handling
 - **API tests** (27): HTTP integration, validation errors (including malformed JSON, a non-JSON body as 415, lower-case codes, unsupported currency pairs, merchant countries that are not ISO codes, amounts below 0.01 and amounts above 1,000,000 USD or its local equivalent as 400), server errors as 500 without internal detail, health check
 - **Self-check tests** (4): every property holds on every quote, the grid covers every market, method, merchant side and currency, a one-cent drift is caught with the failing request, and the endpoint serves the report
+- **Routing tests** (10): `GET /api/v1/calculate` and other wrong methods as a JSON 405 with `Allow`, POST on the GET endpoints as 405, unknown paths as a JSON 404 listing the endpoints, markup in a path never returned as HTML
 - **Demo tests** (11): the page's self-check, four-market comparison and summary, the HTML page for browsers and JSON for API clients at `/`, the config endpoint (including where each tax rate comes from), rate-limit headers, 429 after the limit, the window reset, and per-client counting on Vercel
 
 ## Deployment

@@ -4,6 +4,7 @@ import healthRouter from "./routes/health";
 import metaRouter from "./routes/meta";
 import selfcheckRouter from "./routes/selfcheck";
 import { errorHandler } from "./middleware/errorHandler";
+import { notFound, ENDPOINTS } from "./middleware/notFound";
 import { rateLimit } from "./middleware/rateLimit";
 import { DEMO_PAGE } from "./ui/page";
 
@@ -26,12 +27,7 @@ app.get("/", (req, res) => {
   res.json({
     name: "Cross-Border Fee Calculation API",
     version: "1.0.0",
-    endpoints: {
-      health: "GET /health",
-      calculate: "POST /api/v1/calculate",
-      config: "GET /api/v1/config",
-      selfcheck: "GET /api/v1/selfcheck",
-    },
+    endpoints: ENDPOINTS,
     example: {
       method: "POST",
       url: "/api/v1/calculate",
@@ -56,6 +52,9 @@ app.use("/api/v1/calculate", calculateLimit, calculateRouter);
 app.use("/api/v1/config", metaRouter);
 app.use("/api/v1/selfcheck", selfcheckRouter);
 app.use("/health", healthRouter);
+
+// Everything else: a JSON 404 that lists the real endpoints.
+app.use(notFound);
 
 app.use(errorHandler);
 
