@@ -21,7 +21,7 @@ export const DEMO_PAGE = `<!doctype html>
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cross-Border Fee API">
 <meta property="og:description" content="The all-in price of a cross-border payment into Latin America, with every fee and the rule behind it on its own line.">
-<meta property="og:url" content="https://cross-border-fee-api.vercel.app/demo">
+<meta property="og:url" content="https://fees.nityashree.in/demo">
 <style>
 :root{
   --bg:#f3f6f5; --panel:#ffffff; --ink:#0f1f1a; --ink-2:#34463f; --muted:#56665f;

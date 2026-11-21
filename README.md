@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Nityaa08/cross-border-fee-api/actions/workflows/ci.yml)
 
-**Live demo: [cross-border-fee-api.vercel.app/demo](https://cross-border-fee-api.vercel.app/demo)** · by [Nityashree S](https://nityashree.in)
+**Live demo: [fees.nityashree.in/demo](https://fees.nityashree.in/demo)** · by [Nityashree S](https://nityashree.in)
 
-[![Demo page: a checkout form for a US to Brazil card payment that prints an itemised receipt with the FX spread, processing fee, cross-border fee and IOF tax](docs/screenshot.png)](https://cross-border-fee-api.vercel.app)
+[![Demo page: a checkout form for a US to Brazil card payment that prints an itemised receipt with the FX spread, processing fee, cross-border fee and IOF tax](docs/screenshot.png)](https://fees.nityashree.in)
 
 ## Run it in 1 minute
 
