@@ -10,6 +10,7 @@
  */
 
 import { copyWithFallback } from "./copy";
+import { browserSource } from "./embed";
 export const DEMO_PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -284,7 +285,7 @@ footer a{color:var(--ink-2)}
       <h1>The price tag says $100. <em>The receipt tells the truth.</em></h1>
       <p class="lede">Pick a corridor into Mexico, Colombia, Brazil or Argentina. The API itemises the FX spread, processing fee, cross-border surcharge and local tax, and returns the all-in price in the customer's currency.</p>
       <ul class="proofs" aria-label="Evidence">
-        <li><i aria-hidden="true"></i><b>69</b> Jest tests · CI on every push</li>
+        <li><i aria-hidden="true"></i><b>72</b> Jest tests · CI on every push</li>
         <li><i aria-hidden="true" id="sc-dot"></i><span id="sc-text">Self-check: running…</span></li>
         <li><i aria-hidden="true"></i>Every tax rate cites a source</li>
       </ul>
@@ -379,7 +380,7 @@ footer a{color:var(--ink-2)}
       <dl>
         <div><dt>Problem</dt><dd>A cross-border price hides four separate charges, so customers are surprised at checkout and support teams can't explain the total.</dd></div>
         <div><dt>What I built</dt><dd>A <b>TypeScript / Express API</b> that returns the all-in price as itemised lines, each with its rate and the rule that triggered it. Every number lives in one config file; one pure function applies them in a fixed order.</dd></div>
-        <div><dt>Proof</dt><dd><b>69 tests</b> with exact amounts, CI on every push, and a self-check over <b id="sc-n2">10,000+</b> quotes that runs live on this page.</dd></div>
+        <div><dt>Proof</dt><dd><b>72 tests</b> with exact amounts, CI on every push, and a self-check over <b id="sc-n2">10,000+</b> quotes that runs live on this page.</dd></div>
         <div><dt>Engineering</dt><dd>Input validation with field-level 400s, rate limiting, cent-exact rounding (half cents up, despite floating point), sourced tax rates, serverless deploy on Vercel.</dd></div>
       </dl>
       <div class="checks" aria-labelledby="checks-title">
@@ -667,7 +668,7 @@ footer a{color:var(--ink-2)}
   $("form").addEventListener("submit", calculate);
   $("form").addEventListener("change", function(e){ if (e.target.id === "customer") fillCurrencies(); sync(); });
   $("form").addEventListener("input", sync);
-  var copyWithFallback = ${copyWithFallback.toString()};
+  var copyWithFallback = ${browserSource(copyWithFallback)};
   var copyTimer;
   $("copy").addEventListener("click", function(){
     var btn = $("copy"), target = $("curl-text");
