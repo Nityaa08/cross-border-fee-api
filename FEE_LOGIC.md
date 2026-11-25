@@ -75,9 +75,9 @@ Argentina's 30% PAIS tax is the single largest cost driver and explains why Arge
 ## Realistic Output Range
 
 For a $100 USD cross-border card transaction:
-- **Mexico**: ~23% total markup (IVA dominates)
-- **Colombia**: ~25% total markup (highest IVA)
-- **Brazil**: ~12% total markup (IOF is 3.5%)
-- **Argentina**: ~43% total markup (PAIS tax is extreme)
+- **Mexico**: 23.5% total markup (IVA dominates)
+- **Colombia**: 27.7% total markup (highest IVA)
+- **Brazil**: 12.45% total markup (IOF is 3.5%)
+- **Argentina**: 42.35% total markup (PAIS tax is extreme)
 
-For a domestic same-currency transaction, fees drop to **2–4%** (processing only).
+For a domestic same-currency transaction there is no FX, cross-border fee or tax, only processing: 1.5–2.5% by bank transfer, 4–5% by card, and 5–7% for a cash voucher, whose flat fee weighs more on a small price (measured with the API on 2026-11-25; the card and cash-voucher figures grow on small prices).

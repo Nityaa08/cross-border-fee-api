@@ -33,7 +33,7 @@ export function round2(n: number): number {
  * 1. Convert original amount to customer's local currency (if needed)
  * 2. Apply payment method processing fee (on base amount)
  * 3. Apply cross-border fee (only if customer ≠ merchant country)
- * 4. Apply tax withholding (on the fee portion, country-dependent)
+ * 4. Apply tax withholding (on the base amount, cross-border or foreign-currency only)
  * 5. Sum everything into final customer price
  */
 export function calculateFees(

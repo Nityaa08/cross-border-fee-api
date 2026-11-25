@@ -84,16 +84,22 @@ src/
 ├── config/countries.ts   # ISO 3166-1 alpha-2 codes for merchant_country
 ├── engine/
 │   ├── calculator.ts     # Core fee calculation: pure, deterministic function
-│   └── fx.ts             # FX conversion with spread + in-memory cache
+│   ├── fx.ts             # FX conversion with spread + in-memory cache
+│   └── selfcheck.ts      # The 10,512-quote invariant check
 ├── middleware/
 │   ├── validate.ts       # Request validation with detailed error messages
 │   ├── rateLimit.ts      # Fixed-window limit per client IP
+│   ├── notFound.ts       # JSON 404 (lists the endpoints) and 405 with Allow
 │   └── errorHandler.ts   # Global error handler (no internals in 500s)
 ├── routes/
 │   ├── calculate.ts      # POST /api/v1/calculate
 │   ├── meta.ts           # GET /api/v1/config (markets, rates and their dates)
+│   ├── selfcheck.ts      # GET /api/v1/selfcheck
 │   └── health.ts         # GET /health
-├── ui/page.ts            # The one-page demo UI served at GET /
+├── ui/
+│   ├── page.ts           # The one-page demo UI served at GET / and /demo
+│   ├── copy.ts           # The Copy button's logic (tested, embedded in the page)
+│   └── embed.ts          # Embeds a compiled function in the page safely
 ├── types/index.ts        # All TypeScript interfaces
 ├── app.ts                # Express app setup
 └── index.ts              # Local server entry point
@@ -155,6 +161,10 @@ Each item in `fees` has: `name`, `rate`, `amount`, `currency`, `description`.
 ### `GET /api/v1/config`
 
 The configured markets (currency, tax, cross-border and payment-method fees), each tax rate's `tax_rule` (name, legal basis, source and the date it was checked, or `null` if never checked), the FX rates with their `updated_at` dates, and notes on what is out of date. The demo page builds its form from this.
+
+### `GET /api/v1/selfcheck`
+
+Runs the self-check described [above](#self-check) and returns each invariant with how many quotes it checked and how many failed (an example of the first failure, if any).
 
 ### `GET /health`
 
