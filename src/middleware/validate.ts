@@ -9,12 +9,22 @@ import config from "../config/fees";
 import { ISO_3166_ALPHA2 } from "../config/countries";
 import { usdMidMarketRate } from "../engine/fx";
 
-// Amounts are rounded to 2 decimals, so anything smaller is a zero price
-// that would still be charged the flat processing fee.
-const MIN_AMOUNT = 0.01;
-// The upper limit is in USD and converted at the mid-market rate, so it
-// means the same in every currency (1,000,000 USD = 4,150,000,000 COP).
+// Both limits are in USD and converted at the mid-market rate, so they mean
+// the same in every currency. The minimum is one US cent: 0.01 USD, 41.50 COP,
+// 10.50 ARS. Below it, the flat processing fee is many thousand times the
+// price (0.01 COP was charged a 1,245 COP flat fee). The maximum is
+// 1,000,000 USD = 4,150,000,000 COP.
+const MIN_AMOUNT_USD = 0.01;
 const MAX_AMOUNT_USD = 1_000_000;
+
+/** The smallest accepted price in `currency`, rounded up to the cent. */
+export function minAmount(currency: Currency): number {
+  return Math.ceil(Number((MIN_AMOUNT_USD * usdMidMarketRate(currency) * 100).toPrecision(12))) / 100;
+}
+
+function money(n: number): string {
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 const VALID_COUNTRIES: CustomerCountry[] = ["MX", "CO", "BR", "AR"];
 const VALID_CURRENCIES: Currency[] = ["USD", "MXN", "COP", "BRL", "ARS"];
@@ -70,12 +80,23 @@ export function validateFeeRequest(
       field: "original_amount",
       message: "original_amount must be a positive number",
     });
-  } else if (body.original_amount < MIN_AMOUNT) {
+  } else if (!VALID_CURRENCIES.includes(body.original_currency) && body.original_amount < MIN_AMOUNT_USD) {
     errors.push({
       field: "original_amount",
-      message: `original_amount must be at least ${MIN_AMOUNT}`,
+      message: `original_amount must be at least ${MIN_AMOUNT_USD}`,
     });
   } else if (VALID_CURRENCIES.includes(body.original_currency)) {
+    const currency = body.original_currency as Currency;
+    const min = minAmount(currency);
+    if (body.original_amount < min) {
+      errors.push({
+        field: "original_amount",
+        message:
+          currency === "USD"
+            ? `original_amount must be at least ${MIN_AMOUNT_USD}`
+            : `original_amount must be at least ${money(min)} ${currency} (${MIN_AMOUNT_USD} USD)`,
+      });
+    }
     const max = MAX_AMOUNT_USD * usdMidMarketRate(body.original_currency as Currency);
     if (body.original_amount > max) {
       errors.push({

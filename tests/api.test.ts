@@ -266,6 +266,28 @@ describe("API Integration Tests", () => {
     expect(res.status).toBe(200);
   });
 
+  test.each([
+    ["COP", "CO", 41.49, 41.5, "41.50 COP"],
+    ["ARS", "AR", 10.49, 10.5, "10.50 ARS"],
+    ["MXN", "MX", 0.17, 0.18, "0.18 MXN"],
+    ["BRL", "BR", 0.05, 0.06, "0.06 BRL"],
+  ])(
+    "POST /api/v1/calculate — the minimum is one US cent in %s too",
+    async (currency, country, below, atMin, shown) => {
+      // The 0.01 minimum used to be in the price's own currency: 0.01 COP
+      // (about 0.000002 USD) was accepted and charged a 1,245 COP flat fee,
+      // so total_fees_pct came back as 124,500.
+      const local = { ...valid, original_currency: currency, customer_country: country, merchant_country: country };
+      const low = await request(app).post("/api/v1/calculate").send({ ...local, original_amount: below });
+      expect(low.status).toBe(400);
+      expect(low.body.details).toEqual([
+        { field: "original_amount", message: `original_amount must be at least ${shown} (0.01 USD)` },
+      ]);
+      const ok = await request(app).post("/api/v1/calculate").send({ ...local, original_amount: atMin });
+      expect(ok.status).toBe(200);
+    }
+  );
+
   test("POST /api/v1/calculate — the maximum amount is 1,000,000 USD or its local equivalent", async () => {
     // The cap was 1,000,000 in any currency: a 1,200,000 COP price (about
     // 289 USD) was rejected, while 1,000,000 USD was accepted.
