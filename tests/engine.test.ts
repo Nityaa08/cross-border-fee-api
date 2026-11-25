@@ -43,7 +43,7 @@ describe("Fee Calculation Engine", () => {
 
     // Exact amounts. Mid-market base: 100 × 17.15 = 1,715 MXN.
     expect(res.settlement_amount).toBe(1715);
-    expect(res.fx_rate).toBe(17.58); // 17.15 × 1.025 = 17.57875
+    expect(res.fx_rate).toBe(17.57875); // 17.15 × 1.025, not rounded to 17.58
     expect(feeAmounts(res)).toEqual({
       fx_conversion_cost: 42.88, // 2.5% of 1,715 = 42.875
       payment_processing_fee: 65.17, // 3.5% of 1,715 = 60.025, + 0.30 × 17.15 = 5.145
@@ -108,7 +108,7 @@ describe("Fee Calculation Engine", () => {
 
     // Mid-market base: 250 × 5.85 = 1,462.50 BRL.
     expect(res.settlement_amount).toBe(1462.5);
-    expect(res.fx_rate).toBe(6); // 5.85 × 1.025 = 5.99625
+    expect(res.fx_rate).toBe(5.99625); // 5.85 × 1.025; shown as 6 before 2026-11-25
     expect(feeAmounts(res)).toEqual({
       fx_conversion_cost: 36.56, // 2.5% of 1,462.50 = 36.5625
       payment_processing_fee: 62.89, // 4.2% = 61.425, + 0.25 × 5.85 = 1.4625

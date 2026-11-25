@@ -14,6 +14,14 @@ import { convertCurrency, usdMidMarketRate } from "./fx";
  * half a cent in decimal (1,715 × 2.5% = 42.875) rounds up to 42.88 instead
  * of down because the double is stored as 42.87499999…
  */
+/**
+ * FX rates keep up to 6 decimal places: 5.85 × 1.025 is 5.99625, and showing
+ * it as 6 made "100 × 6 = 600" disagree with the 599.63 actually charged.
+ */
+export function roundRate(n: number): number {
+  return Number(n.toFixed(6));
+}
+
 export function round2(n: number): number {
   return Math.round(Number((n * 100).toPrecision(15))) / 100;
 }
@@ -68,7 +76,7 @@ export function calculateFees(
       rate: fxResult.spread_pct,
       amount: round2(fxResult.spread_cost),
       currency: settlementCurrency,
-      description: `FX spread (${(fxResult.spread_pct * 100).toFixed(1)}%) on ${req.original_currency} → ${settlementCurrency} conversion. Mid-market: ${fxResult.mid_market_rate}, effective: ${round2(fxResult.effective_rate)}`,
+      description: `FX spread (${(fxResult.spread_pct * 100).toFixed(1)}%) on ${req.original_currency} → ${settlementCurrency} conversion. Mid-market: ${fxResult.mid_market_rate}, effective: ${roundRate(fxResult.effective_rate)}`,
     });
   }
 
@@ -136,7 +144,7 @@ export function calculateFees(
     original_currency: req.original_currency,
     settlement_currency: settlementCurrency,
     settlement_amount: settlementAmount,
-    fx_rate: fxResult ? round2(fxResult.effective_rate) : null,
+    fx_rate: fxResult ? roundRate(fxResult.effective_rate) : null,
     fx_spread_pct: fxResult ? fxResult.spread_pct : null,
     fees,
     total_fees: totalFees,
